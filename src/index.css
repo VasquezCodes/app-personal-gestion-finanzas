@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800&family=Sofia+Sans:wght@300;400;450;500;600;700;800;900&display=swap');
+@import 'tailwindcss';
+@import './styles/ios-tokens.css';
+
+@theme {
+  --color-ios-blue: #007AFF;
+  --color-ios-green: #34C759;
+  --color-ios-red: #FF3B30;
+  --color-ios-orange: #FF9500;
+  --color-ios-yellow: #FFCC00;
+  --color-ios-purple: #AF52DE;
+  --color-ios-teal: #5AC8FA;
+  --color-ios-indigo: #5856D6;
+  --color-ios-bg: #F2F2F7;
+  --color-ios-surface: #FFFFFF;
+  --color-ios-label: #000000;
+  --color-ios-label-secondary: rgba(60, 60, 67, 0.6);
+  --color-ios-separator: #C6C6C8;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100svh;
+}

@@ -1,0 +1,185 @@
+/* ============================================
+   MotorHub PWA — Design Tokens
+   ============================================ */
+
+:root {
+  /* ─── Surfaces ──────────────────────────────── */
+  --cream:         #F3F0EE;
+  --bg:            #F3F0EE;
+  --bg-gradient:   radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%);
+  --surface:       #FFFFFF;
+  --surface-deep:  #1E2B38;
+  --bg-card:       #FFFFFF;
+  --bg-elevated:   #F5F3EF;
+  --bg-input:      rgba(255,255,255,0.8);
+
+  /* ─── Text ──────────────────────────────────── */
+  --ink:              #141413;
+  --ink2:             #3A3A38;
+  --muted:            #9A9590;
+  --text-primary:     #141413;
+  --text-secondary:   #9A9590;
+  --text-tertiary:    rgba(20,20,19,0.28);
+
+  /* ─── Status palette ────────────────────────── */
+  --s-stock:      #7A96B8;
+  --s-vendido:    #7AAB8E;
+  --s-rep:        #B89870;
+  --s-stock-bg:   rgba(122,150,184,0.10);
+  --s-vendido-bg: rgba(122,171,142,0.10);
+  --s-rep-bg:     rgba(184,152,112,0.10);
+
+  /* ─── Hero card por hora ────────────────────── */
+  --hero-dia:   #E8D97A;
+  --hero-tarde: #F0B57A;
+  --hero-noche: #7B6FAD;
+
+  /* ─── Accent colors (legacy compat) ─────────── */
+  --green:        #7AAB8E;
+  --green-light:  #9CC4AE;
+  --green-bg:     rgba(122,171,142,0.12);
+  --red:          #C07070;
+  --red-bg:       rgba(192,112,112,0.12);
+  --blue:         #7A96B8;
+  --blue-bg:      rgba(122,150,184,0.12);
+
+  /* ─── Misc ──────────────────────────────────── */
+  --sep:           rgba(20,20,19,0.08);
+  --separator:     rgba(20,20,19,0.08);
+  --r-card:        28px;
+  --r-hero:        36px;
+
+  /* ─── Neutrales ─────────────────────────────── */
+  --neutral-900: #141413;
+  --neutral-800: #1E1E1C;
+  --neutral-700: #3A3A38;
+  --neutral-600: #5A5A58;
+  --neutral-500: #7A7A78;
+  --neutral-400: #9A9590;
+  --neutral-300: #BBBBBB;
+  --neutral-200: #D5D2CC;
+  --neutral-100: #E8E5E0;
+  --neutral-50:  #F5F3EF;
+
+  /* ─── Tipografía ────────────────────────────── */
+  --font-primary:   'Sofia Sans', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  --font-secondary: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  --font:           'Sofia Sans', -apple-system, sans-serif;
+
+  /* ─── iOS aliases (compat) ──────────────────── */
+  --ios-font:              var(--font-primary);
+  --ios-bg-primary:        var(--bg);
+  --ios-bg-secondary:      var(--surface);
+  --ios-bg-tertiary:       var(--bg-elevated);
+  --ios-bg-grouped:        var(--bg);
+  --ios-label-primary:     var(--ink);
+  --ios-label-secondary:   var(--muted);
+  --ios-label-tertiary:    var(--text-tertiary);
+  --ios-separator:         var(--sep);
+  --ios-separator-opaque:  var(--neutral-600);
+  --ios-blue:              var(--blue);
+  --ios-green:             var(--green);
+  --ios-red:               var(--red);
+
+  /* ─── Tamaños tipográficos ───────────────────── */
+  --ios-text-large-title:  34px;
+  --ios-text-title1:       28px;
+  --ios-text-title2:       22px;
+  --ios-text-title3:       20px;
+  --ios-text-headline:     17px;
+  --ios-text-body:         17px;
+  --ios-text-callout:      16px;
+  --ios-text-subheadline:  15px;
+  --ios-text-footnote:     13px;
+  --ios-text-caption1:     12px;
+  --ios-text-caption2:     11px;
+
+  /* ─── Espaciado ──────────────────────────────── */
+  --spacing-xs:  4px;
+  --spacing-sm:  8px;
+  --spacing-md:  16px;
+  --spacing-lg:  20px;
+  --spacing-xl:  24px;
+  --spacing-2xl: 32px;
+
+  /* ─── Radios ─────────────────────────────────── */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-2xl:  24px;
+  --radius-3xl:  28px;
+  --radius-hero: 36px;
+  --radius-pill: 9999px;
+
+  /* ─── Sombras ────────────────────────────────── */
+  --shadow-sm:  0 2px 8px rgba(20,20,19,0.05);
+  --shadow-md:  0 4px 20px rgba(20,20,19,0.08);
+  --shadow-lg:  0 8px 40px rgba(20,20,19,0.10);
+  --shadow-dark: 0 4px 24px rgba(20,20,19,0.14);
+
+  /* ─── Transiciones ───────────────────────────── */
+  --spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease:     cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast:   180ms;
+  --duration-normal: 280ms;
+  --duration-slow:   420ms;
+
+  /* ─── Tab Bar ────────────────────────────────── */
+  --ios-tabbar-height: 83px;
+  --ios-navbar-height: 44px;
+}
+
+/* ─── Reset & Base ───────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg);
+  color: var(--ink);
+  margin: 0;
+  padding: 0;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Safe areas */
+.safe-top    { padding-top:    env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.safe-left   { padding-left:   env(safe-area-inset-left); }
+.safe-right  { padding-right:  env(safe-area-inset-right); }
+
+/* Scroll iOS */
+.scroll-ios {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* Sin selección */
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Scrollbar invisible */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Scrollable fullscreen */
+.scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.scrollable::-webkit-scrollbar { display: none; }
