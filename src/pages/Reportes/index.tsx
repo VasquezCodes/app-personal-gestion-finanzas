@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
@@ -20,39 +21,57 @@ function brandColor(marca: string): string {
   return palette[Math.abs(hash) % palette.length]
 }
 
-function RingChart({ segments, centerValue, size = 210, strokeW = 22 }: {
-  segments: { color: string; pct: number }[]
-  centerValue: string
-  size?: number
-  strokeW?: number
+function RadialDistribution({ data, centerLabel, centerSub }: {
+  data: { name: string; value: number; fill: string }[]
+  centerLabel: string
+  centerSub: string
 }) {
-  const r = (size - strokeW) / 2
-  const circ = 2 * Math.PI * r
-  const cx = size / 2, cy = size / 2
-  const GAP = 4
   return (
-    <div style={{ position: 'relative', width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(20,20,19,0.07)" strokeWidth={strokeW} />
-        {segments.map((s, i) => {
-          const cumPct = segments.slice(0, i).reduce((a, x) => a + x.pct, 0)
-          const dashLen = Math.max(0, (s.pct / 100) * circ - GAP)
-          const dashOff = circ - (cumPct / 100) * circ
-          return (
-            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
-              stroke={s.color} strokeWidth={strokeW}
-              strokeDasharray={`${dashLen} ${circ - dashLen}`}
-              strokeDashoffset={dashOff}
-              strokeLinecap="round"
+    <div style={{ width: 260, height: 260 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <RadialBarChart
+          data={data}
+          startAngle={90}
+          endAngle={-270}
+          innerRadius={55}
+          outerRadius={115}
+          cx="50%"
+          cy="50%"
+        >
+          <PolarGrid gridType="circle" radialLines={false} stroke="none" />
+          <RadialBar
+            dataKey="value"
+            cornerRadius={6}
+            background={{ fill: 'rgba(20,20,19,0.05)' }}
+          />
+          <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+            <Label
+              content={({ viewBox }) => {
+                if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
+                  return (
+                    <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
+                      <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy ?? 0) - 10}
+                        style={{ fontSize: 16, fontWeight: 900, fill: '#141413', fontFamily: 'var(--font)' }}
+                      >
+                        {centerLabel}
+                      </tspan>
+                      <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy ?? 0) + 12}
+                        style={{ fontSize: 11, fill: '#9A9590', fontWeight: 500 }}
+                      >
+                        {centerSub}
+                      </tspan>
+                    </text>
+                  )
+                }
+              }}
             />
-          )
-        })}
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px', textAlign: 'center', lineHeight: 1.2, padding: '0 28px' }}>
-          {centerValue}
-        </div>
-      </div>
+          </PolarRadiusAxis>
+        </RadialBarChart>
+      </ResponsiveContainer>
     </div>
   )
 }
@@ -250,16 +269,20 @@ export default function Reportes() {
           </div>
         </div>
 
-        {/* Ring chart — brand distribution */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
+        {/* Radial chart — brand distribution */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
           {!auxReady ? (
-            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : marcaSegments.length === 0 ? (
-            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin datos</span>
+            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin ventas</span>
             </div>
           ) : (
-            <RingChart segments={marcaSegments} centerValue={fmtN(totalMarcaGanancia)} />
+            <RadialDistribution
+              data={marcaSegments.map((m) => ({ name: m.marca, value: m.ganancia, fill: m.color }))}
+              centerLabel={fmtN(totalMarcaGanancia)}
+              centerSub="ganancia total"
+            />
           )}
         </div>
 

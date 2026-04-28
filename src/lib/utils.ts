@@ -192,6 +192,15 @@ export function sumar<T>(array: T[], clave: keyof T): number {
   return array.reduce((acc, item) => acc + (Number(item[clave]) || 0), 0)
 }
 
+// ---- SHADCN UTILITY ----
+
+import { clsx, type ClassValue } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
+
 // ---- DÍAS EN LOTE ----
 
 /**
