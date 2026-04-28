@@ -11,11 +11,50 @@ const fmtN = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 type Periodo = 'mes' | 'trim' | 'anio'
 type MetricaMarca = 'ganancia' | 'roi' | 'unidades' | 'dias'
 
+const MESES_LARGOS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
 function brandColor(marca: string): string {
   const palette = ['#7A96B8', '#7AAB8E', '#B89870', '#A08ABE', '#C07070', '#6BA8A0']
   let hash = 0
   for (let i = 0; i < marca.length; i++) hash = marca.charCodeAt(i) + ((hash << 5) - hash)
   return palette[Math.abs(hash) % palette.length]
+}
+
+function RingChart({ segments, centerValue, size = 210, strokeW = 22 }: {
+  segments: { color: string; pct: number }[]
+  centerValue: string
+  size?: number
+  strokeW?: number
+}) {
+  const r = (size - strokeW) / 2
+  const circ = 2 * Math.PI * r
+  const cx = size / 2, cy = size / 2
+  const GAP = 4
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(20,20,19,0.07)" strokeWidth={strokeW} />
+        {segments.map((s, i) => {
+          const cumPct = segments.slice(0, i).reduce((a, x) => a + x.pct, 0)
+          const dashLen = Math.max(0, (s.pct / 100) * circ - GAP)
+          const dashOff = circ - (cumPct / 100) * circ
+          return (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={s.color} strokeWidth={strokeW}
+              strokeDasharray={`${dashLen} ${circ - dashLen}`}
+              strokeDashoffset={dashOff}
+              strokeLinecap="round"
+            />
+          )
+        })}
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px', textAlign: 'center', lineHeight: 1.2, padding: '0 28px' }}>
+          {centerValue}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function Reportes() {
@@ -26,6 +65,7 @@ export default function Reportes() {
   const [auxReady, setAuxReady] = useState(false)
   const [periodo, setPeriodo] = useState<Periodo>('mes')
   const [metricaMarca, setMetricaMarca] = useState<MetricaMarca>('ganancia')
+  const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
 
   useEffect(() => {
     fetchVehiculos()
@@ -63,7 +103,6 @@ export default function Reportes() {
   }, [vehiculos, gastos, year, month, repTotals])
 
   const totalGanancia = mesesData.reduce((a, m) => a + m.ganancia, 0)
-  const totalVentas = mesesData.reduce((a, m) => a + m.ventas, 0)
   // Para el gráfico solo usamos valores positivos como referencia de altura
   const maxGanancia = Math.max(...mesesData.map((m) => m.ganancia), 1)
 
@@ -166,74 +205,138 @@ export default function Reportes() {
     URL.revokeObjectURL(url)
   }
 
+  const totalMarcaGanancia = marcasData.reduce((a, m) => a + m.ganancia, 0)
+  const marcaSegments = [...marcasData]
+    .sort((a, b) => b.ganancia - a.ganancia)
+    .map((m) => ({
+      marca: m.marca,
+      color: brandColor(m.marca),
+      pct: totalMarcaGanancia > 0 ? Math.round((m.ganancia / totalMarcaGanancia) * 100) : 0,
+      ganancia: m.ganancia,
+      unidades: m.unidades,
+    }))
+
   return (
     <div style={{ height: '100svh', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: '#F7F5F2',
         paddingBottom: 120,
       }}>
         {/* Header */}
-        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 3 }}>Análisis</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-1px', fontFamily: 'var(--font)' }}>Reportes</div>
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => navigate('/reportes/historial')}
-                style={{
-                  height: 40, padding: '0 14px', borderRadius: 14,
-                  background: 'rgba(20,20,19,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: 'none', cursor: 'pointer',
-                }}
-              >
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink2)', fontFamily: 'var(--font)' }}>Historial</span>
-              </button>
-              <button
-                onClick={handleExport}
-                style={{
-                  height: 40, padding: '0 16px', borderRadius: 14,
-                  background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                  border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(20,20,19,0.18)',
-                }}
-              >
-                <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span style={{ fontSize: 12, fontWeight: 700, color: '#F3F0EE', fontFamily: 'var(--font)' }}>Exportar</span>
-              </button>
-            </div>
+        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px', fontFamily: 'var(--font)' }}>
+            Distribución
           </div>
-
-          {/* Period selector */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            {([{ id: 'mes', label: 'Este mes' }, { id: 'trim', label: 'Trimestre' }, { id: 'anio', label: 'Este año' }] as { id: Periodo; label: string }[]).map((p) => (
-              <button key={p.id} onClick={() => setPeriodo(p.id)} style={{
-                padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
-                fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-              }}>{p.label}</button>
-            ))}
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => navigate('/reportes/historial')} style={{
+              width: 38, height: 38, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                <path d="M12 8v4l3 3" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="12" cy="12" r="9" stroke="var(--ink2)" strokeWidth="1.8"/>
+              </svg>
+            </button>
+            <button onClick={handleExport} style={{
+              width: 38, height: 38, borderRadius: 12, background: 'var(--ink)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
+            }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
         </div>
 
-        {/* Summary KPIs */}
-        <div style={{ padding: '14px 22px 0', display: 'flex', gap: 10 }}>
+        {/* Ring chart — brand distribution */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
+          {!auxReady ? (
+            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ) : marcaSegments.length === 0 ? (
+            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin datos</span>
+            </div>
+          ) : (
+            <RingChart segments={marcaSegments} centerValue={fmtN(totalMarcaGanancia)} />
+          )}
+        </div>
+
+        {/* Month navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 20 }}>
+          <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+              <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
+            {MESES_LARGOS[mesIdx]} {year}
+          </span>
+          <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+              <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Period toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
+          {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }] as { id: Periodo; label: string }[]).map((p) => (
+            <button key={p.id} onClick={() => setPeriodo(p.id)} style={{
+              padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
+              color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
+              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
+            }}>{p.label}</button>
+          ))}
+        </div>
+
+        {/* Brand distribution list */}
+        {marcaSegments.length > 0 && (
+          <div style={{ padding: '18px 16px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {marcaSegments.map((m) => (
+              <div key={m.marca} style={{
+                background: '#fff', borderRadius: 18, padding: '13px 16px',
+                display: 'flex', alignItems: 'center', gap: 14,
+                boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 15, flexShrink: 0,
+                  background: `${m.color}18`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <span style={{ fontSize: 14, fontWeight: 900, color: m.color, letterSpacing: '-0.3px' }}>
+                    {m.marca.slice(0, 2).toUpperCase()}
+                  </span>
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{m.marca}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{fmtN(m.ganancia)} · {m.unidades} unid</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{m.pct}%</span>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* KPI strip */}
+        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
           {[
-            { label: 'Ganancia total', value: auxReady ? totalGananciaDisplay : '—', sub: auxReady ? `${totalVentas} ventas` : '···', dark: true },
-            { label: 'Margen neto', value: margenDisplay, sub: 'sobre ingresos', color: '#7AAB8E', dark: false },
+            { label: 'Ganancia total', value: auxReady ? totalGananciaDisplay : '—', color: '#F3F0EE', bg: 'var(--ink)', dark: true },
+            { label: 'Margen neto', value: margenDisplay, color: '#7AAB8E', bg: '#fff', dark: false },
+            { label: 'Mejor ROI', value: marcasData.length ? `${Math.round(Math.max(...marcasData.map((m) => m.roi)))}%` : '—', color: 'var(--ink)', bg: '#fff', dark: false },
           ].map((k) => (
             <div key={k.label} style={{
-              flex: 1, background: k.dark ? 'var(--ink)' : 'rgba(122,171,142,0.12)', borderRadius: 22,
-              padding: '14px 16px',
-              boxShadow: k.dark ? '0 4px 18px rgba(20,20,19,0.15)' : '0 1px 8px rgba(20,20,19,0.04)',
+              flex: 1, background: k.bg, borderRadius: 16, padding: '12px 12px',
+              boxShadow: k.dark ? '0 4px 14px rgba(20,20,19,0.15)' : '0 1px 8px rgba(20,20,19,0.05)',
             }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: k.dark ? 'rgba(243,240,238,0.4)' : 'var(--muted)', marginBottom: 4 }}>{k.label}</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: k.dark ? '#F3F0EE' : k.color, letterSpacing: '-1px', lineHeight: 1 }}>{k.value}</div>
-              <div style={{ fontSize: 10, color: k.dark ? 'rgba(243,240,238,0.35)' : 'var(--muted)', marginTop: 3 }}>{k.sub}</div>
+              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7,
+                color: k.dark ? 'rgba(243,240,238,0.45)' : 'var(--muted)', marginBottom: 4 }}>{k.label}</div>
+              <div style={{ fontSize: 20, fontWeight: 900, color: k.color, letterSpacing: '-0.5px', lineHeight: 1 }}>{k.value}</div>
             </div>
           ))}
         </div>

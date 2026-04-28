@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
-import { useStaggerIn } from '../../hooks/animations/useStaggerIn'
 
 type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro'
-type Periodo = 'mes' | 'anio' | 'todo'
 
 const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = {
   alquiler:  { label: 'Alquiler',  color: '#7A96B8', bg: 'rgba(122,150,184,0.12)' },
@@ -15,23 +13,97 @@ const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = 
   otro:      { label: 'Otro',      color: '#9A9590', bg: 'rgba(154,149,144,0.12)' },
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const USD_RATE = 1050
 
-const fmtShort = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
+const fmtUSD = (n: number) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+const fmtARS = (n: number) =>
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
+
+const catIcons: Record<CatKey, React.ReactNode> = {
+  alquiler: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
+      <path d="M9 21V12h6v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  servicios: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  marketing: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+      <path d="M3 11h3v6H3zM18 4v16l-9-3.5V7.5L18 4z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  personal: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    </svg>
+  ),
+  otro: (
+    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+      <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
+    </svg>
+  ),
+}
+
+function RingChart({ segments, centerValue, size = 210, strokeW = 22 }: {
+  segments: { color: string; pct: number }[]
+  centerValue: string
+  size?: number
+  strokeW?: number
+}) {
+  const r = (size - strokeW) / 2
+  const circ = 2 * Math.PI * r
+  const cx = size / 2, cy = size / 2
+  const GAP = 4
+
+  return (
+    <div style={{ position: 'relative', width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(20,20,19,0.07)" strokeWidth={strokeW} />
+        {segments.map((s, i) => {
+          const cumPct = segments.slice(0, i).reduce((a, x) => a + x.pct, 0)
+          const dashLen = Math.max(0, (s.pct / 100) * circ - GAP)
+          const dashOff = circ - (cumPct / 100) * circ
+          return (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none"
+              stroke={s.color} strokeWidth={strokeW}
+              strokeDasharray={`${dashLen} ${circ - dashLen}`}
+              strokeDashoffset={dashOff}
+              strokeLinecap="round"
+            />
+          )
+        })}
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          fontSize: 18, fontWeight: 900, color: 'var(--ink)',
+          letterSpacing: '-0.5px', textAlign: 'center', lineHeight: 1.2, padding: '0 28px',
+        }}>
+          {centerValue}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function Gastos() {
+  const navigate = useNavigate()
   const [gastos, setGastos] = useState<GastoGeneral[]>([])
   const [loading, setLoading] = useState(true)
-  const [filtro, setFiltro] = useState<'todos' | CatKey>('todos')
-  const [periodo, setPeriodo] = useState<Periodo>('mes')
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [moneda, setMoneda] = useState<'pesos' | 'dolares'>('dolares')
 
   const now = new Date()
-  const mesKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const anioKey = String(now.getFullYear())
-  const mesLabel = now.toLocaleDateString('es-AR', { month: 'long', year: 'numeric' }).replace(/^\w/, (c) => c.toUpperCase())
+  const [mesIdx, setMesIdx] = useState(now.getMonth())
+  const [anio] = useState(now.getFullYear())
 
   useEffect(() => {
     setLoading(true)
@@ -39,228 +111,166 @@ export default function Gastos() {
       .then(({ data }) => { setGastos(data ?? []); setLoading(false) })
   }, [])
 
-  const gastosPeriodo = gastos.filter((g) => {
-    if (periodo === 'mes') return g.fecha.startsWith(mesKey)
-    if (periodo === 'anio') return g.fecha.startsWith(anioKey)
-    return true
-  })
-
-  const gastosFiltrados = filtro === 'todos' ? gastosPeriodo : gastosPeriodo.filter((g) => g.categoria === filtro)
-  const totalPeriodo = gastosPeriodo.reduce((a, g) => a + g.monto, 0)
+  const mesKey = `${anio}-${String(mesIdx + 1).padStart(2, '0')}`
+  const gastosMes = gastos.filter((g) => g.fecha.startsWith(mesKey))
+  const totalMes = gastosMes.reduce((a, g) => a + g.monto, 0)
 
   const catTotals = (Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][])
     .map(([k, v]) => ({
       ...v, key: k,
-      total: gastosPeriodo.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0),
-      pct: totalPeriodo > 0
-        ? Math.round(gastosPeriodo.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0) / totalPeriodo * 100)
+      total: gastosMes.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0),
+      pct: totalMes > 0
+        ? Math.round(gastosMes.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0) / totalMes * 100)
         : 0,
     }))
     .filter((c) => c.total > 0)
     .sort((a, b) => b.total - a.total)
 
-  const periodoLabel = periodo === 'mes' ? `Total · ${mesLabel}` : periodo === 'anio' ? `Total · ${anioKey}` : 'Historial completo'
+  const formatMonto = (n: number) =>
+    moneda === 'dolares' ? fmtUSD(n) : fmtARS(n * USD_RATE)
 
-  const navigate = useNavigate()
-  const listRef = useRef<HTMLDivElement>(null)
-  useStaggerIn(listRef, [gastosFiltrados.length, filtro, periodo])
-
-  async function handleDelete(id: string) {
-    setDeletingId(id)
-    const { error } = await supabase.from('gastos_generales').delete().eq('id', id)
-    setDeletingId(null)
-    if (!error) setGastos((prev) => prev.filter((g) => g.id !== id))
-  }
+  const displayTotal = moneda === 'dolares' ? fmtUSD(totalMes) : fmtARS(totalMes * USD_RATE)
 
   return (
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: '#F7F5F2',
         paddingBottom: 120,
       }}>
         {/* Header */}
-        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--muted)', marginBottom: 3 }}>Finanzas</div>
-              <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-1px', fontFamily: 'var(--font)' }}>Gastos</div>
-            </div>
-            <button onClick={() => setSheetOpen(true)} style={{
-              width: 40, height: 40, borderRadius: 14, background: 'var(--ink)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(20,20,19,0.18)',
+        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px', fontFamily: 'var(--font)' }}>
+            Distribución
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => navigate('/gastos/historial')} style={{
+              width: 38, height: 38, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+                <path d="M12 8v4l3 3" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/>
+                <circle cx="12" cy="12" r="9" stroke="var(--ink2)" strokeWidth="1.8"/>
+              </svg>
+            </button>
+            <button onClick={() => setSheetOpen(true)} style={{
+              width: 38, height: 38, borderRadius: 12, background: 'var(--ink)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
+            }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
                 <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
-
-          {/* Período selector */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }, { id: 'todo', label: 'Historial' }] as { id: Periodo; label: string }[]).map((p) => (
-              <button key={p.id} onClick={() => setPeriodo(p.id)} style={{
-                padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
-                fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-              }}>{p.label}</button>
-            ))}
-          </div>
-
-          {/* Quick access */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button onClick={() => navigate('/gastos/reparaciones')} style={{
-              flex: 1, height: 36, borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: 'rgba(20,20,19,0.07)',
-              color: 'var(--ink2)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)',
-            }}>
-              🔧 Reparaciones
-            </button>
-            <button onClick={() => navigate('/gastos/historial')} style={{
-              flex: 1, height: 36, borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: 'rgba(20,20,19,0.07)',
-              color: 'var(--ink2)', fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)',
-            }}>
-              📋 Historial
-            </button>
-          </div>
         </div>
 
-        {/* Total KPI */}
-        <div style={{ padding: '14px 22px 0' }}>
-          <div style={{
-            background: 'var(--surface-deep)', borderRadius: 28,
-            padding: '20px 20px', position: 'relative', overflow: 'hidden',
-            boxShadow: '0 4px 24px rgba(20,20,19,0.14)',
-          }}>
-            <div style={{ position: 'absolute', right: -8, top: -10, fontSize: 72, fontWeight: 900, color: 'rgba(255,255,255,0.04)', letterSpacing: '-3px', pointerEvents: 'none', userSelect: 'none' }}>
-              GASTO
+        {/* Ring chart */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
+          {loading ? (
+            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+          ) : catTotals.length === 0 ? (
+            <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin datos</span>
             </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.4)', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 10 }}>
-              {periodoLabel}
-            </div>
-            <div style={{ fontSize: 46, fontWeight: 900, color: '#F3F0EE', letterSpacing: '-2px', lineHeight: 1, marginBottom: 6 }}>
-              {loading ? '—' : fmtShort(totalPeriodo)}
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(243,240,238,0.4)', fontWeight: 500 }}>
-              {gastosPeriodo.length} movimientos registrados
-            </div>
-            {catTotals.length > 0 && (
-              <div style={{ marginTop: 16, display: 'flex', gap: 4, alignItems: 'flex-end', height: 32 }}>
-                {catTotals.map((c) => (
-                  <div key={c.key} style={{
-                    flex: c.pct, height: Math.max(8, Math.round(c.pct * 0.32)), borderRadius: 4,
-                    background: c.color, opacity: 0.7,
-                  }} />
-                ))}
-              </div>
-            )}
-          </div>
+          ) : (
+            <RingChart segments={catTotals} centerValue={displayTotal} />
+          )}
         </div>
 
-        {/* Category breakdown */}
-        {catTotals.length > 0 && (
-          <div style={{ padding: '12px 22px 0' }}>
-            <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 24, padding: '16px 16px', boxShadow: '0 1px 12px rgba(20,20,19,0.05)' }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)', marginBottom: 12 }}>Por categoría</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {catTotals.map((c) => (
-                  <div key={c.key}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.color }} />
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink2)' }}>{c.label}</span>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{c.pct}%</span>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)' }}>{fmt(c.total)}</span>
-                      </div>
-                    </div>
-                    <div style={{ height: 5, background: 'rgba(20,20,19,0.06)', borderRadius: 999 }}>
-                      <div style={{ width: `${c.pct}%`, height: '100%', background: c.color, borderRadius: 999 }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Month navigation */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 20 }}>
+          <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+              <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
+            {MESES[mesIdx]} {anio}
+          </span>
+          <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+              <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
 
-        {/* Filter pills */}
-        <div style={{ padding: '14px 22px 0', display: 'flex', gap: 8, overflowX: 'auto' }} className="scrollbar-none">
-          {([{ id: 'todos', label: 'Todos' }, ...Object.entries(catConfig).map(([k, v]) => ({ id: k as CatKey, label: v.label }))] as { id: 'todos' | CatKey; label: string }[]).map((f) => (
-            <button key={f.id} onClick={() => setFiltro(f.id)} style={{
-              padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-              background: filtro === f.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-              color: filtro === f.id ? '#F3F0EE' : 'var(--ink2)',
-              fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-            }}>{f.label}</button>
+        {/* Currency toggle */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
+          {([{ id: 'dolares', label: 'Dólares' }, { id: 'pesos', label: 'Pesos' }] as { id: 'pesos' | 'dolares'; label: string }[]).map((m) => (
+            <button key={m.id} onClick={() => setMoneda(m.id)} style={{
+              padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
+              background: moneda === m.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
+              color: moneda === m.id ? '#F3F0EE' : 'var(--ink2)',
+              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
+            }}>{m.label}</button>
           ))}
         </div>
 
-        {/* Expense list */}
-        <div ref={listRef} style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
+        {/* Category cards */}
+        <div style={{ padding: '18px 16px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
           {loading ? (
             [1, 2, 3].map((i) => (
-              <div key={i} style={{ height: 64, borderRadius: 18, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div key={i} style={{ height: 70, borderRadius: 18, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))
-          ) : gastosFiltrados.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>
-              {periodo === 'mes' ? 'Sin gastos este mes' : periodo === 'anio' ? 'Sin gastos este año' : 'Sin gastos registrados'}
+          ) : catTotals.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
+              Sin gastos registrados en {MESES[mesIdx]}
             </div>
           ) : (
-            gastosFiltrados.map((g) => {
-              const c = catConfig[g.categoria as CatKey] ?? catConfig.otro
-              const fecha = new Date(g.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: periodo === 'todo' ? 'numeric' : undefined })
-              const isDeleting = deletingId === g.id
-              return (
-                <div key={g.id} style={{
-                  background: 'rgba(255,255,255,0.82)',
-                  backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                  borderRadius: 18, padding: '13px 16px',
-                  display: 'flex', alignItems: 'center', gap: 13,
-                  boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
-                  border: '0.5px solid rgba(20,20,19,0.06)',
-                  opacity: isDeleting ? 0.5 : 1,
-                  transition: 'opacity .2s',
+            catTotals.map((c) => (
+              <div key={c.key} style={{
+                background: '#fff', borderRadius: 18, padding: '13px 16px',
+                display: 'flex', alignItems: 'center', gap: 14,
+                boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 15, flexShrink: 0,
+                  background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: c.color,
                 }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: 13, flexShrink: 0,
-                    background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {g.descripcion}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{fecha} · {c.label}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#C07070' }}>
-                      −{fmt(g.monto)}
-                    </div>
-                    <button
-                      onClick={() => handleDelete(g.id)}
-                      disabled={isDeleting}
-                      style={{
-                        width: 30, height: 30, borderRadius: 10, border: 'none', cursor: 'pointer',
-                        background: 'rgba(192,112,112,0.10)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                        <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#C07070" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
+                  {catIcons[c.key as CatKey]}
                 </div>
-              )
-            })
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{formatMonto(c.total)}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
+                </div>
+              </div>
+            ))
           )}
+        </div>
+
+        {/* Quick actions */}
+        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
+          <button onClick={() => navigate('/gastos/reparaciones')} style={{
+            flex: 1, height: 46, borderRadius: 16,
+            background: '#fff', border: '0.5px solid rgba(20,20,19,0.08)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            cursor: 'pointer', fontFamily: 'var(--font)',
+            boxShadow: '0 1px 6px rgba(20,20,19,0.04)',
+          }}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+                stroke="#B89870" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Reparaciones</span>
+          </button>
+          <button onClick={() => navigate('/gastos/historial')} style={{
+            flex: 1, height: 46, borderRadius: 16,
+            background: 'var(--ink)', border: 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+            cursor: 'pointer', fontFamily: 'var(--font)',
+            boxShadow: '0 4px 14px rgba(20,20,19,0.15)',
+          }}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+              <path d="M3 12h18M3 6h18M3 18h12" stroke="#F3F0EE" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#F3F0EE' }}>Ver historial</span>
+          </button>
         </div>
       </div>
 
