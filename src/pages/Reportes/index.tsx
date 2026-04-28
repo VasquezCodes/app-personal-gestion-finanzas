@@ -21,38 +21,6 @@ function brandColor(marca: string): string {
   return palette[Math.abs(hash) % palette.length]
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const RadialArcLabel = (props: any) => {
-  const cx = Number(props.cx ?? 0)
-  const cy = Number(props.cy ?? 0)
-  const innerRadius = Number(props.innerRadius ?? 0)
-  const outerRadius = Number(props.outerRadius ?? 0)
-  const startAngle = Number(props.startAngle ?? 90)
-  const endAngle = Number(props.endAngle ?? 90)
-  const name = String(props.name ?? '')
-
-  if (!name) return null
-  const arcSpan = Math.abs(startAngle - endAngle)
-  if (arcSpan < 18) return null
-
-  const midAngle = (startAngle + endAngle) / 2
-  const midRadius = (innerRadius + outerRadius) / 2
-  const RADIAN = Math.PI / 180
-  const x = cx + midRadius * Math.cos(midAngle * RADIAN)
-  const y = cy - midRadius * Math.sin(midAngle * RADIAN)
-
-  return (
-    <text
-      x={x} y={y}
-      textAnchor="middle" dominantBaseline="middle"
-      fill="#fff"
-      style={{ fontSize: 10, fontWeight: 700, pointerEvents: 'none' }}
-    >
-      {name}
-    </text>
-  )
-}
-
 function RadialDistribution({ data, centerLabel, centerSub }: {
   data: { name: string; value: number; fill: string }[]
   centerLabel: string
@@ -71,12 +39,7 @@ function RadialDistribution({ data, centerLabel, centerSub }: {
           cy="50%"
         >
           <PolarGrid gridType="circle" radialLines={false} stroke="none" />
-          <RadialBar
-            dataKey="value"
-            cornerRadius={6}
-            background={{ fill: 'rgba(20,20,19,0.05)' }}
-            label={{ content: RadialArcLabel }}
-          />
+          <RadialBar dataKey="value" cornerRadius={6} background={{ fill: 'rgba(20,20,19,0.05)' }} />
           <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
             <Label
               content={({ viewBox }) => {
