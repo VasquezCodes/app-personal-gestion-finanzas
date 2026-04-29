@@ -68,6 +68,7 @@ export const BRAND_LOGOS: Record<string, string> = {
   'Ford':          '/carBrands/ford-svgrepo-com.svg',
   'Honda':         '/carBrands/honda-svgrepo-com.svg',
   'Hummer':        '/carBrands/hummer-svgrepo-com.svg',
+  'Hyundai':       '/carBrands/hyundai-svgrepo-com.svg',
   'Infiniti':      '/carBrands/infiniti-svgrepo-com.svg',
   'Jeep':          '/carBrands/jeep-alt-svgrepo-com.svg',
   'Kia':           '/carBrands/kia-svgrepo-com.svg',
