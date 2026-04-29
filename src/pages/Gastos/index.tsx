@@ -108,10 +108,8 @@ export default function Gastos() {
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [vista, setVista] = useState<'mes' | 'anio'>('mes')
-
-  const now = new Date()
-  const [mesIdx, setMesIdx] = useState(now.getMonth())
-  const [anio] = useState(now.getFullYear())
+  const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
+  const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
 
   useEffect(() => {
     setLoading(true)
@@ -119,9 +117,30 @@ export default function Gastos() {
       .then(({ data }) => { setGastos(data ?? []); setLoading(false) })
   }, [])
 
-  const mesKey = `${anio}-${String(mesIdx + 1).padStart(2, '0')}`
+  const currentYear = new Date().getFullYear()
+
+  const prevNav = () => {
+    if (vista === 'mes') {
+      if (mesIdx === 0) { setMesIdx(11); setAnioNav(a => a - 1) }
+      else setMesIdx(m => m - 1)
+    } else {
+      setAnioNav(a => a - 1)
+    }
+  }
+  const nextNav = () => {
+    if (vista === 'mes') {
+      if (mesIdx === 11) { setMesIdx(0); setAnioNav(a => a + 1) }
+      else setMesIdx(m => m + 1)
+    } else {
+      setAnioNav(a => Math.min(a + 1, currentYear))
+    }
+  }
+
+  const navLabel = vista === 'mes' ? `${MESES[mesIdx]} ${anioNav}` : String(anioNav)
+  const mesKey = `${anioNav}-${String(mesIdx + 1).padStart(2, '0')}`
+
   const gastosVista = gastos.filter((g) =>
-    vista === 'mes' ? g.fecha.startsWith(mesKey) : g.fecha.startsWith(String(anio))
+    vista === 'mes' ? g.fecha.startsWith(mesKey) : g.fecha.startsWith(String(anioNav))
   )
   const totalVista = gastosVista.reduce((a, g) => a + g.monto, 0)
 
@@ -137,7 +156,7 @@ export default function Gastos() {
     .sort((a, b) => b.total - a.total)
 
   const displayTotal = fmtUSD(totalVista)
-  const centerSub = vista === 'mes' ? `${MESES[mesIdx].slice(0, 3)} ${anio}` : String(anio)
+  const centerSub = vista === 'mes' ? `${MESES[mesIdx].slice(0, 3)} ${anioNav}` : String(anioNav)
 
   return (
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
@@ -190,11 +209,10 @@ export default function Gastos() {
           )}
         </div>
 
-        {/* Vista toggle + month nav */}
+        {/* Vista toggle + navigator */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 20 }}>
-          {/* Mes / Año pills */}
           <div style={{ display: 'flex', gap: 6 }}>
-            {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }] as { id: 'mes'|'anio'; label: string }[]).map((v) => (
+            {([{ id: 'mes', label: 'Mes' }, { id: 'anio', label: 'Año' }] as { id: 'mes'|'anio'; label: string }[]).map((v) => (
               <button key={v.id} onClick={() => setVista(v.id)} style={{
                 padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: vista === v.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
@@ -204,24 +222,21 @@ export default function Gastos() {
             ))}
           </div>
 
-          {/* Month navigator — only visible in Mes mode */}
-          {vista === 'mes' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-              <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-                <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                  <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 130, textAlign: 'center' }}>
-                {MESES[mesIdx]} {anio}
-              </span>
-              <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-                <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                  <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <button onClick={prevNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
+              {navLabel}
+            </span>
+            <button onClick={nextNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Category cards */}
@@ -232,7 +247,7 @@ export default function Gastos() {
             ))
           ) : catTotals.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
-              Sin gastos registrados en {vista === 'mes' ? MESES[mesIdx] : String(anio)}
+              Sin gastos registrados en {navLabel}
             </div>
           ) : (
             catTotals.map((c) => (

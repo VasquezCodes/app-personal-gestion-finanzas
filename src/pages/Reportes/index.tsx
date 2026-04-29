@@ -117,6 +117,7 @@ export default function Reportes() {
   const [periodo, setPeriodo] = useState<Periodo>('mes')
   const [metricaMarca, setMetricaMarca] = useState<MetricaMarca>('ganancia')
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
+  const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
 
   useEffect(() => {
     fetchVehiculos()
@@ -136,22 +137,55 @@ export default function Reportes() {
   const costoVehiculo = (v: typeof vehiculos[number]) =>
     v.precio_compra + (v.gastos_adicionales ?? 0) + (repTotals[v.id] ?? 0)
 
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = now.getMonth()
+  const currentYear = new Date().getFullYear()
+
+  // Navigator handlers — mes wraps into adjacent years
+  const prevNav = () => startTransition(() => {
+    if (periodo === 'mes') {
+      if (mesIdx === 0) { setMesIdx(11); setAnioNav(a => a - 1) }
+      else setMesIdx(m => m - 1)
+    } else {
+      setAnioNav(a => a - 1)
+    }
+  })
+  const nextNav = () => startTransition(() => {
+    if (periodo === 'mes') {
+      if (mesIdx === 11) { setMesIdx(0); setAnioNav(a => a + 1) }
+      else setMesIdx(m => m + 1)
+    } else {
+      setAnioNav(a => Math.min(a + 1, currentYear))
+    }
+  })
+
+  const navLabel = periodo === 'mes'
+    ? `${MESES_LARGOS[mesIdx]} ${anioNav}`
+    : String(anioNav)
+
+  const year = anioNav
 
   const mesesData = useMemo(() => {
+    if (periodo === 'anio') {
+      // 12 meses del año seleccionado
+      return Array.from({ length: 12 }).map((_, i) => {
+        const key = `${anioNav}-${String(i + 1).padStart(2, '0')}`
+        const mes = new Date(anioNav, i, 1).toLocaleDateString('es-AR', { month: 'short' }).replace(/^\w/, (c) => c.toUpperCase()).slice(0, 3)
+        const vendidos = vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
+        const brutaMes = vendidos.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0)
+        const gastosMes = gastos.filter((g) => g.fecha.startsWith(key)).reduce((s, g) => s + g.monto, 0)
+        return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key }
+      })
+    }
+    // 6 meses terminando en el mes seleccionado
     return Array.from({ length: 6 }).map((_, i) => {
-      const d = new Date(year, month - 5 + i, 1)
+      const d = new Date(anioNav, mesIdx - 5 + i, 1)
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
       const mes = d.toLocaleDateString('es-AR', { month: 'short' }).replace(/^\w/, (c) => c.toUpperCase()).slice(0, 3)
       const vendidos = vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
       const brutaMes = vendidos.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0)
       const gastosMes = gastos.filter((g) => g.fecha.startsWith(key)).reduce((s, g) => s + g.monto, 0)
-      const ganancia = brutaMes - gastosMes  // ganancia neta del mes
-      return { mes, ganancia, ventas: vendidos.length, key }
+      return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key }
     })
-  }, [vehiculos, gastos, year, month, repTotals])
+  }, [vehiculos, gastos, anioNav, mesIdx, periodo, repTotals])
 
   const totalGanancia = mesesData.reduce((a, m) => a + m.ganancia, 0)
   // Para el gráfico solo usamos valores positivos como referencia de altura
@@ -323,33 +357,36 @@ export default function Reportes() {
           )}
         </div>
 
-        {/* Month navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 20 }}>
-          <button onClick={() => startTransition(() => setMesIdx((m) => Math.max(0, m - 1)))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-              <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
-            {MESES_LARGOS[mesIdx]} {year}
-          </span>
-          <button onClick={() => startTransition(() => setMesIdx((m) => Math.min(11, m + 1)))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-              <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
+        {/* Navigator + period toggle */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 20 }}>
+          {/* Mes / Año pills */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([{ id: 'mes', label: 'Mes' }, { id: 'anio', label: 'Año' }] as { id: Periodo; label: string }[]).map((p) => (
+              <button key={p.id} onClick={() => startTransition(() => setPeriodo(p.id))} style={{
+                padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
+                color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
+                fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
+              }}>{p.label}</button>
+            ))}
+          </div>
 
-        {/* Period toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
-          {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }] as { id: Periodo; label: string }[]).map((p) => (
-            <button key={p.id} onClick={() => startTransition(() => setPeriodo(p.id))} style={{
-              padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-              color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
-              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-            }}>{p.label}</button>
-          ))}
+          {/* Unified navigator — navigates month or year */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <button onClick={prevNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
+              {navLabel}
+            </span>
+            <button onClick={nextNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Brand distribution list */}
