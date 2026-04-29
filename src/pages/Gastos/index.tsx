@@ -15,12 +15,9 @@ const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = 
 }
 
 const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-const USD_RATE = 1050
 
 const fmtUSD = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
-const fmtARS = (n: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
 const catIcons: Record<CatKey, React.ReactNode> = {
   alquiler: (
@@ -110,7 +107,7 @@ export default function Gastos() {
   const [gastos, setGastos] = useState<GastoGeneral[]>([])
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
-  const [moneda, setMoneda] = useState<'pesos' | 'dolares'>('dolares')
+  const [vista, setVista] = useState<'mes' | 'anio'>('mes')
 
   const now = new Date()
   const [mesIdx, setMesIdx] = useState(now.getMonth())
@@ -123,24 +120,24 @@ export default function Gastos() {
   }, [])
 
   const mesKey = `${anio}-${String(mesIdx + 1).padStart(2, '0')}`
-  const gastosMes = gastos.filter((g) => g.fecha.startsWith(mesKey))
-  const totalMes = gastosMes.reduce((a, g) => a + g.monto, 0)
+  const gastosVista = gastos.filter((g) =>
+    vista === 'mes' ? g.fecha.startsWith(mesKey) : g.fecha.startsWith(String(anio))
+  )
+  const totalVista = gastosVista.reduce((a, g) => a + g.monto, 0)
 
   const catTotals = (Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][])
     .map(([k, v]) => ({
       ...v, key: k,
-      total: gastosMes.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0),
-      pct: totalMes > 0
-        ? Math.round(gastosMes.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0) / totalMes * 100)
+      total: gastosVista.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0),
+      pct: totalVista > 0
+        ? Math.round(gastosVista.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0) / totalVista * 100)
         : 0,
     }))
     .filter((c) => c.total > 0)
     .sort((a, b) => b.total - a.total)
 
-  const formatMonto = (n: number) =>
-    moneda === 'dolares' ? fmtUSD(n) : fmtARS(n * USD_RATE)
-
-  const displayTotal = moneda === 'dolares' ? fmtUSD(totalMes) : fmtARS(totalMes * USD_RATE)
+  const displayTotal = fmtUSD(totalVista)
+  const centerSub = vista === 'mes' ? `${MESES[mesIdx].slice(0, 3)} ${anio}` : String(anio)
 
   return (
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
@@ -188,38 +185,43 @@ export default function Gastos() {
             <RadialDistribution
               data={catTotals.map((c) => ({ name: c.label, value: c.total, fill: c.color }))}
               centerLabel={displayTotal}
-              centerSub={`${MESES[mesIdx].slice(0, 3)} ${anio}`}
+              centerSub={centerSub}
             />
           )}
         </div>
 
-        {/* Month navigation */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 20 }}>
-          <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-              <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
-            {MESES[mesIdx]} {anio}
-          </span>
-          <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-            <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-              <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
+        {/* Vista toggle + month nav */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, marginTop: 20 }}>
+          {/* Mes / Año pills */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }] as { id: 'mes'|'anio'; label: string }[]).map((v) => (
+              <button key={v.id} onClick={() => setVista(v.id)} style={{
+                padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: vista === v.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
+                color: vista === v.id ? '#F3F0EE' : 'var(--ink2)',
+                fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
+              }}>{v.label}</button>
+            ))}
+          </div>
 
-        {/* Currency toggle */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
-          {([{ id: 'dolares', label: 'Dólares' }, { id: 'pesos', label: 'Pesos' }] as { id: 'pesos' | 'dolares'; label: string }[]).map((m) => (
-            <button key={m.id} onClick={() => setMoneda(m.id)} style={{
-              padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: moneda === m.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-              color: moneda === m.id ? '#F3F0EE' : 'var(--ink2)',
-              fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
-            }}>{m.label}</button>
-          ))}
+          {/* Month navigator — only visible in Mes mode */}
+          {vista === 'mes' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+                <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                  <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 130, textAlign: 'center' }}>
+                {MESES[mesIdx]} {anio}
+              </span>
+              <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+                <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
+                  <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Category cards */}
@@ -230,7 +232,7 @@ export default function Gastos() {
             ))
           ) : catTotals.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
-              Sin gastos registrados en {MESES[mesIdx]}
+              Sin gastos registrados en {vista === 'mes' ? MESES[mesIdx] : String(anio)}
             </div>
           ) : (
             catTotals.map((c) => (
@@ -248,7 +250,7 @@ export default function Gastos() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{formatMonto(c.total)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{fmtUSD(c.total)}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
