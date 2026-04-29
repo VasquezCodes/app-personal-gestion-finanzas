@@ -2,6 +2,7 @@ import { memo, startTransition, useEffect, useMemo, useRef, useState } from 'rea
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
+import { BRAND_LOGOS } from '../Inventario/CargarVehiculoSheet'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
 import { useCountUp } from '../../hooks/animations/useCountUp'
@@ -362,12 +363,22 @@ export default function Reportes() {
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 15, flexShrink: 0,
-                  background: m.bg,
+                  background: BRAND_LOGOS[m.marca] ? '#fff' : m.bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: BRAND_LOGOS[m.marca] ? 10 : 0,
+                  border: BRAND_LOGOS[m.marca] ? `1.5px solid ${m.color}22` : 'none',
                 }}>
-                  <span style={{ fontSize: 14, fontWeight: 900, color: m.color, letterSpacing: '-0.3px' }}>
-                    {m.marca.slice(0, 2).toUpperCase()}
-                  </span>
+                  {BRAND_LOGOS[m.marca] ? (
+                    <img
+                      src={BRAND_LOGOS[m.marca]}
+                      alt={m.marca}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.85 }}
+                    />
+                  ) : (
+                    <span style={{ fontSize: 14, fontWeight: 900, color: m.color, letterSpacing: '-0.3px' }}>
+                      {m.marca.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{m.marca}</div>
