@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
@@ -25,31 +25,40 @@ function indexColor(i: number, total: number) {
 
 const RADIAN = Math.PI / 180
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function PieLabel({ cx, cy, midAngle, outerRadius, percent, name, fill }: any) {
+interface PieLabelProps {
+  cx?: number
+  cy?: number
+  midAngle?: number
+  outerRadius?: number
+  percent?: number
+  name?: string
+  fill?: string
+  [key: string]: unknown
+}
+
+function PieLabel(props: PieLabelProps): React.ReactElement | null {
+  const { cx = 0, cy = 0, midAngle = 0, outerRadius = 0, percent = 0, name = '', fill = '#141413' } = props
   if (percent < 0.04) return null
-  const radius = outerRadius + 32
+  const radius = outerRadius + 30
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
   const y = cy + radius * Math.sin(-midAngle * RADIAN)
   const anchor = x > cx ? 'start' : 'end'
+  // Two lines stacked: name above, % below — avoids horizontal overlap on both sides
   return (
-    <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" style={{ pointerEvents: 'none' }}>
-      <tspan style={{ fontSize: 11, fontWeight: 700, fill: '#141413', fontFamily: 'var(--font)' }}>
+    <text x={x} y={y} textAnchor={anchor} style={{ pointerEvents: 'none' }}>
+      <tspan x={x} dy="-7" style={{ fontSize: 11, fontWeight: 700, fill: '#141413', fontFamily: 'var(--font)' }}>
         {name}
       </tspan>
-      <tspan
-        dx={anchor === 'start' ? 5 : -5}
-        style={{ fontSize: 10, fontWeight: 500, fill: fill, opacity: 0.9 }}
-      >
+      <tspan x={x} dy="15" style={{ fontSize: 10, fontWeight: 600, fill }}>
         {Math.round(percent * 100)}%
       </tspan>
     </text>
   )
 }
 
-function PieDistribution({ data }: {
-  data: { name: string; value: number; fill: string }[]
-}) {
+interface PieEntry { name: string; value: number; fill: string }
+
+const PieDistribution = memo(function PieDistribution({ data }: { data: PieEntry[] }) {
   return (
     <div style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -63,7 +72,8 @@ function PieDistribution({ data }: {
             outerRadius={88}
             strokeWidth={2}
             stroke="#F7F5F2"
-            label={PieLabel}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            label={PieLabel as any}
             labelLine={{ stroke: 'rgba(20,20,19,0.18)', strokeWidth: 1 }}
           >
             {data.map((entry, i) => (
@@ -73,7 +83,7 @@ function PieDistribution({ data }: {
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null
-              const d = payload[0].payload as { name: string; value: number; fill: string }
+              const d = payload[0].payload as PieEntry
               return (
                 <div style={{
                   background: '#fff', borderRadius: 14, padding: '10px 14px',
@@ -95,7 +105,7 @@ function PieDistribution({ data }: {
       </ResponsiveContainer>
     </div>
   )
-}
+})
 
 export default function Reportes() {
   const navigate = useNavigate()
@@ -314,7 +324,7 @@ export default function Reportes() {
 
         {/* Month navigation */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 20 }}>
-          <button onClick={() => setMesIdx((m) => Math.max(0, m - 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+          <button onClick={() => startTransition(() => setMesIdx((m) => Math.max(0, m - 1)))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
             <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
               <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -322,7 +332,7 @@ export default function Reportes() {
           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
             {MESES_LARGOS[mesIdx]} {year}
           </span>
-          <button onClick={() => setMesIdx((m) => Math.min(11, m + 1))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+          <button onClick={() => startTransition(() => setMesIdx((m) => Math.min(11, m + 1)))} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
             <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
               <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
@@ -332,7 +342,7 @@ export default function Reportes() {
         {/* Period toggle */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
           {([{ id: 'mes', label: 'Este mes' }, { id: 'anio', label: 'Este año' }] as { id: Periodo; label: string }[]).map((p) => (
-            <button key={p.id} onClick={() => setPeriodo(p.id)} style={{
+            <button key={p.id} onClick={() => startTransition(() => setPeriodo(p.id))} style={{
               padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
               background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
               color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
@@ -583,7 +593,7 @@ export default function Reportes() {
                 ] as { id: MetricaMarca; label: string }[]).map((m) => (
                   <button
                     key={m.id}
-                    onClick={() => setMetricaMarca(m.id)}
+                    onClick={() => startTransition(() => setMetricaMarca(m.id))}
                     style={{
                       padding: '5px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
                       background: metricaMarca === m.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
