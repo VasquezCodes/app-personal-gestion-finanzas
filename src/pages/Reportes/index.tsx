@@ -245,8 +245,15 @@ export default function Reportes() {
     return { proyeccion, min, max, tendencia, last3: mesesData.slice(-3) }
   }, [mesesData])
 
+  // Clave del período seleccionado para filtrar vehículos
+  const filterKey = periodo === 'mes'
+    ? `${anioNav}-${String(mesIdx + 1).padStart(2, '0')}`
+    : String(anioNav)
+
   const marcasData = useMemo(() => {
-    const vendidos = vehiculos.filter((v) => v.estado === 'vendido' && v.precio_venta)
+    const vendidos = vehiculos.filter((v) =>
+      v.estado === 'vendido' && v.precio_venta && v.fecha_venta?.startsWith(filterKey)
+    )
     const brands: Record<string, { ganancia: number; roiSum: number; roiCount: number; unidades: number; diasSum: number; diasCount: number }> = {}
     vendidos.forEach((v) => {
       const costo = costoVehiculo(v)
@@ -275,7 +282,7 @@ export default function Reportes() {
 
     const total = sorted.length
     return sorted.map((item, i) => ({ ...item, ...indexColor(i, total) }))
-  }, [vehiculos, repTotals])
+  }, [vehiculos, repTotals, filterKey])
 
   const topListRef = useRef<HTMLDivElement>(null)
   useStaggerIn(topListRef, [topVehiculos.length, periodo])
@@ -351,8 +358,15 @@ export default function Reportes() {
           {!auxReady ? (
             <div style={{ height: 300, borderRadius: 24, background: 'rgba(20,20,19,0.05)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : marcaSegments.length === 0 ? (
-            <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin ventas registradas</span>
+            <div style={{
+              height: 200, margin: '0 8px',
+              background: 'rgba(255,255,255,0.7)', borderRadius: 24,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24" style={{ opacity: 0.25 }}>
+                <path d="M21.21 15.89A9 9 0 118 2.83M22 12A10 10 0 0012 2v10z" stroke="var(--ink)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--muted)' }}>Sin ventas en {navLabel}</span>
             </div>
           ) : (
             <PieDistribution
