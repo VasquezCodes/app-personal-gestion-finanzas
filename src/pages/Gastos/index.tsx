@@ -118,6 +118,9 @@ export default function Gastos() {
   }, [])
 
   const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth()
+  const atCurrentMonth = vista === 'mes' && anioNav === currentYear && mesIdx === currentMonth
+  const atCurrentYear  = vista === 'anio' && anioNav === currentYear
 
   const prevNav = () => {
     if (vista === 'mes') {
@@ -128,6 +131,7 @@ export default function Gastos() {
     }
   }
   const nextNav = () => {
+    if (atCurrentMonth || atCurrentYear) return
     if (vista === 'mes') {
       if (mesIdx === 11) { setMesIdx(0); setAnioNav(a => a + 1) }
       else setMesIdx(m => m + 1)
@@ -231,7 +235,8 @@ export default function Gastos() {
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
               {navLabel}
             </span>
-            <button onClick={nextNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <button onClick={nextNav} disabled={atCurrentMonth || atCurrentYear}
+              style={{ background: 'none', border: 'none', padding: 8, cursor: atCurrentMonth || atCurrentYear ? 'default' : 'pointer', opacity: atCurrentMonth || atCurrentYear ? 0.25 : 1 }}>
               <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
                 <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>

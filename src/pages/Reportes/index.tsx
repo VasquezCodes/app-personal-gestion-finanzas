@@ -138,6 +138,9 @@ export default function Reportes() {
     v.precio_compra + (v.gastos_adicionales ?? 0) + (repTotals[v.id] ?? 0)
 
   const currentYear = new Date().getFullYear()
+  const currentMonth = new Date().getMonth()
+  const atCurrentMonth = periodo === 'mes' && anioNav === currentYear && mesIdx === currentMonth
+  const atCurrentYear  = periodo === 'anio' && anioNav === currentYear
 
   // Navigator handlers — mes wraps into adjacent years
   const prevNav = () => startTransition(() => {
@@ -149,6 +152,7 @@ export default function Reportes() {
     }
   })
   const nextNav = () => startTransition(() => {
+    if (atCurrentMonth || atCurrentYear) return
     if (periodo === 'mes') {
       if (mesIdx === 11) { setMesIdx(0); setAnioNav(a => a + 1) }
       else setMesIdx(m => m + 1)
@@ -381,7 +385,8 @@ export default function Reportes() {
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
               {navLabel}
             </span>
-            <button onClick={nextNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
+            <button onClick={nextNav} disabled={atCurrentMonth || atCurrentYear}
+              style={{ background: 'none', border: 'none', padding: 8, cursor: atCurrentMonth || atCurrentYear ? 'default' : 'pointer', opacity: atCurrentMonth || atCurrentYear ? 0.25 : 1 }}>
               <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
                 <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
