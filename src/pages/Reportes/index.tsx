@@ -14,11 +14,13 @@ type MetricaMarca = 'ganancia' | 'roi' | 'unidades' | 'dias'
 
 const MESES_LARGOS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
-function brandColor(marca: string): string {
-  const palette = ['#7A96B8', '#7AAB8E', '#B89870', '#A08ABE', '#C07070', '#6BA8A0']
-  let hash = 0
-  for (let i = 0; i < marca.length; i++) hash = marca.charCodeAt(i) + ((hash << 5) - hash)
-  return palette[Math.abs(hash) % palette.length]
+// Genera N colores únicos con hues equidistantes — sin colisiones para cualquier cantidad de marcas
+function indexColor(i: number, total: number) {
+  const hue = Math.round((i * 360) / Math.max(total, 1))
+  return {
+    color: `hsl(${hue}, 30%, 58%)`,
+    bg:    `hsla(${hue}, 30%, 58%, 0.12)`,
+  }
 }
 
 function RadialDistribution({ data, centerLabel, centerSub }: {
@@ -188,13 +190,19 @@ export default function Reportes() {
       brands[v.marca].unidades++
       if (dias > 0) { brands[v.marca].diasSum += dias; brands[v.marca].diasCount++ }
     })
-    return Object.entries(brands).map(([marca, d]) => ({
-      marca,
-      ganancia: d.ganancia,
-      roi: d.roiCount > 0 ? d.roiSum / d.roiCount : 0,
-      unidades: d.unidades,
-      dias: d.diasCount > 0 ? d.diasSum / d.diasCount : 0,
-    }))
+    // Sort by ganancia descending first, then assign colors by stable position
+    const sorted = Object.entries(brands)
+      .map(([marca, d]) => ({
+        marca,
+        ganancia: d.ganancia,
+        roi: d.roiCount > 0 ? d.roiSum / d.roiCount : 0,
+        unidades: d.unidades,
+        dias: d.diasCount > 0 ? d.diasSum / d.diasCount : 0,
+      }))
+      .sort((a, b) => b.ganancia - a.ganancia)
+
+    const total = sorted.length
+    return sorted.map((item, i) => ({ ...item, ...indexColor(i, total) }))
   }, [vehiculos, repTotals])
 
   const topListRef = useRef<HTMLDivElement>(null)
@@ -225,7 +233,8 @@ export default function Reportes() {
     .sort((a, b) => b.ganancia - a.ganancia)
     .map((m) => ({
       marca: m.marca,
-      color: brandColor(m.marca),
+      color: m.color,
+      bg: m.bg,
       pct: totalMarcaGanancia > 0 ? Math.round((m.ganancia / totalMarcaGanancia) * 100) : 0,
       ganancia: m.ganancia,
       unidades: m.unidades,
@@ -322,7 +331,7 @@ export default function Reportes() {
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 15, flexShrink: 0,
-                  background: `${m.color}18`,
+                  background: m.bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
                   <span style={{ fontSize: 14, fontWeight: 900, color: m.color, letterSpacing: '-0.3px' }}>
@@ -584,7 +593,7 @@ export default function Reportes() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 14 }}>
                       {sorted.map((d) => {
                         const pct = (d[metricaMarca] / maxVal) * 100
-                        const color = brandColor(d.marca)
+                        const color = d.color
                         return (
                           <div key={d.marca}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
