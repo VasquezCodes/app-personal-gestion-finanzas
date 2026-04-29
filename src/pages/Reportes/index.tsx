@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
@@ -23,52 +23,75 @@ function indexColor(i: number, total: number) {
   }
 }
 
-function RadialDistribution({ data, centerLabel, centerSub }: {
+const RADIAN = Math.PI / 180
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function PieLabel({ cx, cy, midAngle, outerRadius, percent, name, fill }: any) {
+  if (percent < 0.04) return null
+  const radius = outerRadius + 32
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+  const anchor = x > cx ? 'start' : 'end'
+  return (
+    <text x={x} y={y} textAnchor={anchor} dominantBaseline="central" style={{ pointerEvents: 'none' }}>
+      <tspan style={{ fontSize: 11, fontWeight: 700, fill: '#141413', fontFamily: 'var(--font)' }}>
+        {name}
+      </tspan>
+      <tspan
+        dx={anchor === 'start' ? 5 : -5}
+        style={{ fontSize: 10, fontWeight: 500, fill: fill, opacity: 0.9 }}
+      >
+        {Math.round(percent * 100)}%
+      </tspan>
+    </text>
+  )
+}
+
+function PieDistribution({ data }: {
   data: { name: string; value: number; fill: string }[]
-  centerLabel: string
-  centerSub: string
 }) {
   return (
-    <div style={{ width: 260, height: 260 }}>
+    <div style={{ width: '100%', height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <RadialBarChart
-          data={data}
-          startAngle={90}
-          endAngle={-270}
-          innerRadius={55}
-          outerRadius={115}
-          cx="50%"
-          cy="50%"
-        >
-          <PolarGrid gridType="circle" radialLines={false} stroke="none" />
-          <RadialBar dataKey="value" cornerRadius={6} background={{ fill: 'rgba(20,20,19,0.05)' }} />
-          <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
-            <Label
-              content={({ viewBox }) => {
-                if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
-                  return (
-                    <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
-                      <tspan
-                        x={viewBox.cx}
-                        y={(viewBox.cy ?? 0) - 10}
-                        style={{ fontSize: 15, fontWeight: 900, fill: '#141413', fontFamily: 'var(--font)' }}
-                      >
-                        {centerLabel}
-                      </tspan>
-                      <tspan
-                        x={viewBox.cx}
-                        y={(viewBox.cy ?? 0) + 12}
-                        style={{ fontSize: 11, fill: '#9A9590', fontWeight: 500 }}
-                      >
-                        {centerSub}
-                      </tspan>
-                    </text>
-                  )
-                }
-              }}
-            />
-          </PolarRadiusAxis>
-        </RadialBarChart>
+        <PieChart>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            cx="50%"
+            cy="50%"
+            outerRadius={88}
+            strokeWidth={2}
+            stroke="#F7F5F2"
+            label={PieLabel}
+            labelLine={{ stroke: 'rgba(20,20,19,0.18)', strokeWidth: 1 }}
+          >
+            {data.map((entry, i) => (
+              <Cell key={i} fill={entry.fill} />
+            ))}
+          </Pie>
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null
+              const d = payload[0].payload as { name: string; value: number; fill: string }
+              return (
+                <div style={{
+                  background: '#fff', borderRadius: 14, padding: '10px 14px',
+                  boxShadow: '0 4px 20px rgba(20,20,19,0.12)',
+                  border: '0.5px solid rgba(20,20,19,0.06)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.fill }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#141413' }}>{d.name}</span>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#141413', marginTop: 4 }}>
+                    {new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(d.value)}
+                  </div>
+                </div>
+              )
+            }}
+          />
+        </PieChart>
       </ResponsiveContainer>
     </div>
   )
@@ -274,19 +297,17 @@ export default function Reportes() {
           </div>
         </div>
 
-        {/* Radial chart — brand distribution */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+        {/* Pie chart — brand ganancia distribution */}
+        <div style={{ padding: '8px 8px 0' }}>
           {!auxReady ? (
-            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ height: 300, borderRadius: 24, background: 'rgba(20,20,19,0.05)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : marcaSegments.length === 0 ? (
-            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin ventas</span>
+            <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin ventas registradas</span>
             </div>
           ) : (
-            <RadialDistribution
+            <PieDistribution
               data={marcaSegments.map((m) => ({ name: m.marca, value: m.ganancia, fill: m.color }))}
-              centerLabel={fmtN(totalMarcaGanancia)}
-              centerSub="ganancia total"
             />
           )}
         </div>
