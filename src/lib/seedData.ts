@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import type { GastoHistorial, VentaHistorial } from '../types'
 
 // UUIDs fijos en formato válido (v4-ish) para poder limpiarlos luego
 // Vehículos: 00000000-0000-4000-a000-0000000000XX
@@ -8,6 +9,40 @@ const GID = (n: number) => `00000000-0000-4000-b000-${String(n).padStart(12, '0'
 
 const MOCK_V_IDS = Array.from({ length: 11 }, (_, i) => VID(i + 1))
 const MOCK_G_IDS = Array.from({ length: 18 }, (_, i) => GID(i + 1))
+
+const LS_GANANCIAS = 'motorhub_ganancias_historial'
+const LS_GASTOS    = 'motorhub_gastos_historial'
+
+// IDs prefix para identificar mocks en localStorage
+const MOCK_LS_PREFIX = 'mock-ls-'
+
+const MOCK_GANANCIAS: VentaHistorial[] = [
+  { id: `${MOCK_LS_PREFIX}g1`,  marca: 'Toyota',    modelo: 'Corolla',  anio: 2021, ganancia: 4500, roi: 25, dias: 15, fecha: '2026-01-20' },
+  { id: `${MOCK_LS_PREFIX}g2`,  marca: 'Ford',      modelo: 'F-150',    anio: 2020, ganancia: 7000, roi: 22, dias: 24, fecha: '2026-02-03' },
+  { id: `${MOCK_LS_PREFIX}g3`,  marca: 'Honda',     modelo: 'Civic',    anio: 2022, ganancia: 3500, roi: 20, dias: 17, fecha: '2026-02-18' },
+  { id: `${MOCK_LS_PREFIX}g4`,  marca: 'Chevrolet', modelo: 'Equinox',  anio: 2021, ganancia: 4500, roi: 19, dias: 21, fecha: '2026-03-05' },
+  { id: `${MOCK_LS_PREFIX}g5`,  marca: 'Kia',       modelo: 'Sportage', anio: 2022, ganancia: 5000, roi: 24, dias: 20, fecha: '2026-03-22' },
+  { id: `${MOCK_LS_PREFIX}g6`,  marca: 'Toyota',    modelo: 'Hilux',    anio: 2020, ganancia: 8000, roi: 23, dias: 20, fecha: '2026-03-28' },
+  { id: `${MOCK_LS_PREFIX}g7`,  marca: 'Hyundai',   modelo: 'Tucson',   anio: 2021, ganancia: 5000, roi: 23, dias: 9,  fecha: '2026-04-10' },
+  { id: `${MOCK_LS_PREFIX}g8`,  marca: 'Nissan',    modelo: 'Frontier', anio: 2020, ganancia: 6000, roi: 21, dias: 19, fecha: '2026-04-22' },
+  { id: `${MOCK_LS_PREFIX}g9`,  marca: 'Ford',      modelo: 'Ranger',   anio: 2022, ganancia: 6500, roi: 22, dias: 17, fecha: '2026-04-25' },
+]
+
+const MOCK_GASTOS_LS: GastoHistorial[] = [
+  { id: `${MOCK_LS_PREFIX}h1`,  descripcion: 'Alquiler local',        monto: 1200, categoria: 'alquiler',  fecha: '2026-01-01' },
+  { id: `${MOCK_LS_PREFIX}h2`,  descripcion: 'Electricidad y agua',   monto: 180,  categoria: 'servicios', fecha: '2026-01-04' },
+  { id: `${MOCK_LS_PREFIX}h3`,  descripcion: 'Instagram Ads',         monto: 320,  categoria: 'marketing', fecha: '2026-01-08' },
+  { id: `${MOCK_LS_PREFIX}h4`,  descripcion: 'Sueldo administrativo', monto: 900,  categoria: 'personal',  fecha: '2026-01-10' },
+  { id: `${MOCK_LS_PREFIX}h5`,  descripcion: 'Alquiler local',        monto: 1200, categoria: 'alquiler',  fecha: '2026-02-01' },
+  { id: `${MOCK_LS_PREFIX}h6`,  descripcion: 'Google Ads',            monto: 480,  categoria: 'marketing', fecha: '2026-02-10' },
+  { id: `${MOCK_LS_PREFIX}h7`,  descripcion: 'Contadora',             monto: 350,  categoria: 'personal',  fecha: '2026-02-15' },
+  { id: `${MOCK_LS_PREFIX}h8`,  descripcion: 'Alquiler local',        monto: 1200, categoria: 'alquiler',  fecha: '2026-03-01' },
+  { id: `${MOCK_LS_PREFIX}h9`,  descripcion: 'Instagram Ads',         monto: 550,  categoria: 'marketing', fecha: '2026-03-06' },
+  { id: `${MOCK_LS_PREFIX}h10`, descripcion: 'Sueldo administrativo', monto: 950,  categoria: 'personal',  fecha: '2026-03-10' },
+  { id: `${MOCK_LS_PREFIX}h11`, descripcion: 'Alquiler local',        monto: 1200, categoria: 'alquiler',  fecha: '2026-04-01' },
+  { id: `${MOCK_LS_PREFIX}h12`, descripcion: 'MercadoLibre premium',  monto: 140,  categoria: 'marketing', fecha: '2026-04-11' },
+  { id: `${MOCK_LS_PREFIX}h13`, descripcion: 'Contadora',             monto: 350,  categoria: 'personal',  fecha: '2026-04-15' },
+]
 
 export async function seedMockData(): Promise<{ ok: boolean; error?: string }> {
   const { data: { user } } = await supabase.auth.getUser()
@@ -60,6 +95,17 @@ export async function seedMockData(): Promise<{ ok: boolean; error?: string }> {
 
   if (vRes.error) return { ok: false, error: vRes.error.message }
   if (gRes.error) return { ok: false, error: gRes.error.message }
+
+  // Seed localStorage historiales — merge with existing, avoid duplicates by id
+  const mergeLS = <T extends { id: string }>(key: string, items: T[]) => {
+    const existing: T[] = JSON.parse(localStorage.getItem(key) ?? '[]')
+    const existingIds = new Set(existing.map(e => e.id))
+    const merged = [...existing, ...items.filter(i => !existingIds.has(i.id))]
+    localStorage.setItem(key, JSON.stringify(merged))
+  }
+  mergeLS(LS_GANANCIAS, MOCK_GANANCIAS)
+  mergeLS(LS_GASTOS,    MOCK_GASTOS_LS)
+
   return { ok: true }
 }
 
@@ -70,5 +116,14 @@ export async function clearMockData(): Promise<{ ok: boolean; error?: string }> 
   ])
   if (vRes.error) return { ok: false, error: vRes.error.message }
   if (gRes.error) return { ok: false, error: gRes.error.message }
+
+  // Limpiar localStorage historiales
+  const filterLS = <T extends { id: string }>(key: string) => {
+    const existing: T[] = JSON.parse(localStorage.getItem(key) ?? '[]')
+    localStorage.setItem(key, JSON.stringify(existing.filter(e => !e.id.startsWith(MOCK_LS_PREFIX))))
+  }
+  filterLS(LS_GANANCIAS)
+  filterLS(LS_GASTOS)
+
   return { ok: true }
 }
