@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
+import { seedMockData, clearMockData } from '../../lib/seedData'
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -65,6 +66,8 @@ export default function Configuracion() {
   const { user, signOut } = useAuthStore()
   const [notif, setNotif] = useState(true)
   const [sync, setSync] = useState(true)
+  const [seeding, setSeeding] = useState<'idle' | 'loading' | 'ok' | 'err'>('idle')
+  const [clearing, setClearing] = useState<'idle' | 'loading' | 'ok' | 'err'>('idle')
 
   const initials = user?.email
     ? user.email.slice(0, 2).toUpperCase()
@@ -74,6 +77,20 @@ export default function Configuracion() {
   async function handleSignOut() {
     await signOut()
     navigate('/login', { replace: true })
+  }
+
+  async function handleSeed() {
+    setSeeding('loading')
+    const res = await seedMockData()
+    setSeeding(res.ok ? 'ok' : 'err')
+    setTimeout(() => setSeeding('idle'), 3000)
+  }
+
+  async function handleClear() {
+    setClearing('loading')
+    const res = await clearMockData()
+    setClearing(res.ok ? 'ok' : 'err')
+    setTimeout(() => setClearing('idle'), 3000)
   }
 
   return (
@@ -155,6 +172,48 @@ export default function Configuracion() {
                 icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" stroke="var(--ink2)" strokeWidth="1.8"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" stroke="var(--ink2)" strokeWidth="1.8"/></svg>}
                 label="Base de datos" value="Supabase · Conectado" chevron
               />
+            </div>
+          </div>
+
+          {/* Datos de prueba */}
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Datos de prueba</div>
+            <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
+              <button onClick={handleSeed} disabled={seeding === 'loading'} style={{
+                width: '100%', padding: '14px 18px', background: 'none', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: seeding === 'loading' ? 'default' : 'pointer',
+                borderBottom: '0.5px solid rgba(20,20,19,0.07)',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(122,171,142,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path d="M12 5v14M5 12h14" stroke="#7AAB8E" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Cargar datos de prueba</span>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: seeding === 'ok' ? '#7AAB8E' : seeding === 'err' ? '#C07070' : 'var(--muted)' }}>
+                  {seeding === 'loading' ? 'Cargando…' : seeding === 'ok' ? '✓ Listo' : seeding === 'err' ? 'Error' : 'Ene–Abr 2026'}
+                </span>
+              </button>
+              <button onClick={handleClear} disabled={clearing === 'loading'} style={{
+                width: '100%', padding: '14px 18px', background: 'none', border: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                cursor: clearing === 'loading' ? 'default' : 'pointer',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(192,112,112,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#C07070" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#C07070' }}>Eliminar datos de prueba</span>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: clearing === 'ok' ? '#7AAB8E' : clearing === 'err' ? '#C07070' : 'var(--muted)' }}>
+                  {clearing === 'loading' ? 'Eliminando…' : clearing === 'ok' ? '✓ Listo' : clearing === 'err' ? 'Error' : 'mock-*'}
+                </span>
+              </button>
             </div>
           </div>
 
