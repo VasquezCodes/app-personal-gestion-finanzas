@@ -19,6 +19,13 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto'
 const fmtUSD = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
+const repIcon = (
+  <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
+    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+)
+
 const catIcons: Record<CatKey, React.ReactNode> = {
   alquiler: (
     <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
@@ -105,6 +112,7 @@ function RadialDistribution({ data, centerLabel, centerSub }: {
 export default function Gastos() {
   const navigate = useNavigate()
   const [gastos, setGastos] = useState<GastoGeneral[]>([])
+  const [repsData, setRepsData] = useState<{ costo: number; fecha: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [vista, setVista] = useState<'mes' | 'anio'>('mes')
@@ -113,8 +121,14 @@ export default function Gastos() {
 
   useEffect(() => {
     setLoading(true)
-    supabase.from('gastos_generales').select('*').order('fecha', { ascending: false })
-      .then(({ data }) => { setGastos(data ?? []); setLoading(false) })
+    Promise.all([
+      supabase.from('gastos_generales').select('*').order('fecha', { ascending: false }),
+      supabase.from('reparaciones').select('costo, fecha'),
+    ]).then(([gRes, rRes]) => {
+      setGastos(gRes.data ?? [])
+      setRepsData(rRes.data ?? [])
+      setLoading(false)
+    })
   }, [])
 
   const currentYear = new Date().getFullYear()
@@ -146,20 +160,31 @@ export default function Gastos() {
   const gastosVista = gastos.filter((g) =>
     vista === 'mes' ? g.fecha.startsWith(mesKey) : g.fecha.startsWith(String(anioNav))
   )
-  const totalVista = gastosVista.reduce((a, g) => a + g.monto, 0)
+  const repsVista = repsData.filter((r) =>
+    vista === 'mes' ? r.fecha?.startsWith(mesKey) : r.fecha?.startsWith(String(anioNav))
+  )
+  const repTotalVista = repsVista.reduce((a, r) => a + r.costo, 0)
+  const gastosTotalVista = gastosVista.reduce((a, g) => a + g.monto, 0)
+  const grandTotal = gastosTotalVista + repTotalVista
 
-  const catTotals = (Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][])
-    .map(([k, v]) => ({
-      ...v, key: k,
-      total: gastosVista.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0),
-      pct: totalVista > 0
-        ? Math.round(gastosVista.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0) / totalVista * 100)
-        : 0,
-    }))
-    .filter((c) => c.total > 0)
-    .sort((a, b) => b.total - a.total)
+  const catTotals = [
+    ...(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][])
+      .map(([k, v]) => {
+        const total = gastosVista.filter((g) => g.categoria === k).reduce((a, g) => a + g.monto, 0)
+        return { ...v, key: k, total, pct: grandTotal > 0 ? Math.round(total / grandTotal * 100) : 0 }
+      })
+      .filter((c) => c.total > 0),
+    ...(repTotalVista > 0 ? [{
+      key: 'reparaciones',
+      label: 'Reparaciones',
+      color: '#C07070',
+      bg: 'rgba(192,112,112,0.12)',
+      total: repTotalVista,
+      pct: grandTotal > 0 ? Math.round(repTotalVista / grandTotal * 100) : 0,
+    }] : []),
+  ].sort((a, b) => b.total - a.total)
 
-  const displayTotal = fmtUSD(totalVista)
+  const displayTotal = fmtUSD(grandTotal)
   const centerSub = vista === 'mes' ? `${MESES[mesIdx].slice(0, 3)} ${anioNav}` : String(anioNav)
 
   return (
@@ -252,7 +277,7 @@ export default function Gastos() {
             ))
           ) : catTotals.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
-              Sin gastos registrados en {navLabel}
+              Sin gastos ni reparaciones en {navLabel}
             </div>
           ) : (
             catTotals.map((c) => (
@@ -266,7 +291,7 @@ export default function Gastos() {
                   background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: c.color,
                 }}>
-                  {catIcons[c.key as CatKey]}
+                  {c.key === 'reparaciones' ? repIcon : catIcons[c.key as CatKey]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
@@ -281,23 +306,10 @@ export default function Gastos() {
           )}
         </div>
 
-        {/* Quick actions */}
-        <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
-          <button onClick={() => navigate('/gastos/reparaciones')} style={{
-            flex: 1, height: 46, borderRadius: 16,
-            background: '#fff', border: '0.5px solid rgba(20,20,19,0.08)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-            cursor: 'pointer', fontFamily: 'var(--font)',
-            boxShadow: '0 1px 6px rgba(20,20,19,0.04)',
-          }}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
-                stroke="#B89870" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Reparaciones</span>
-          </button>
+        {/* Quick action */}
+        <div style={{ padding: '14px 16px 0' }}>
           <button onClick={() => navigate('/gastos/historial')} style={{
-            flex: 1, height: 46, borderRadius: 16,
+            width: '100%', height: 46, borderRadius: 16,
             background: 'var(--ink)', border: 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
             cursor: 'pointer', fontFamily: 'var(--font)',
