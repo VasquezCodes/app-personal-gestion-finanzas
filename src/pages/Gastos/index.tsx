@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {
+  Home, Zap, Megaphone, User, MoreHorizontal,
+  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X, AlignLeft,
+} from 'lucide-react'
 import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
@@ -27,43 +31,12 @@ const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto'
 const fmtUSD = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
-const repIcon = (
-  <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-    <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
-      stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  </svg>
-)
-
 const catIcons: Record<CatKey, React.ReactNode> = {
-  alquiler: (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-      <path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H5a1 1 0 01-1-1V10.5z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>
-      <path d="M9 21V12h6v9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  servicios: (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  marketing: (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-      <path d="M3 11h3v6H3zM18 4v16l-9-3.5V7.5L18 4z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  ),
-  personal: (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
-      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-    </svg>
-  ),
-  otro: (
-    <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-      <circle cx="5" cy="12" r="1.5" fill="currentColor"/>
-      <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
-      <circle cx="19" cy="12" r="1.5" fill="currentColor"/>
-    </svg>
-  ),
+  alquiler:  <Home       size={18} strokeWidth={1.8} />,
+  servicios: <Zap        size={18} strokeWidth={1.8} />,
+  marketing: <Megaphone  size={18} strokeWidth={1.8} />,
+  personal:  <User       size={18} strokeWidth={1.8} />,
+  otro:      <MoreHorizontal size={18} strokeWidth={1.8} />,
 }
 
 function RadialDistribution({ data, centerLabel, centerSub }: {
@@ -213,19 +186,14 @@ export default function Gastos() {
               width: 38, height: 38, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-                <path d="M12 8v4l3 3" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/>
-                <circle cx="12" cy="12" r="9" stroke="var(--ink2)" strokeWidth="1.8"/>
-              </svg>
+              <Clock size={16} color="var(--ink2)" strokeWidth={1.8} />
             </button>
             <button onClick={() => setSheetOpen(true)} style={{
               width: 38, height: 38, borderRadius: 12, background: 'var(--ink)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
             }}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <Plus size={16} color="#F3F0EE" strokeWidth={2} />
             </button>
           </div>
         </div>
@@ -262,18 +230,14 @@ export default function Gastos() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
             <button onClick={prevNav} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 8 }}>
-              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                <path d="M7 1L1 6.5l6 5.5" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <ChevronLeft size={16} color="rgba(20,20,19,0.35)" strokeWidth={1.8} />
             </button>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--ink2)', minWidth: 140, textAlign: 'center' }}>
               {navLabel}
             </span>
             <button onClick={nextNav} disabled={atCurrentMonth || atCurrentYear}
               style={{ background: 'none', border: 'none', padding: 8, cursor: atCurrentMonth || atCurrentYear ? 'default' : 'pointer', opacity: atCurrentMonth || atCurrentYear ? 0.25 : 1 }}>
-              <svg width="8" height="13" viewBox="0 0 8 13" fill="none">
-                <path d="M1 1l6 5.5L1 12" stroke="rgba(20,20,19,0.35)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <ChevronRight size={16} color="rgba(20,20,19,0.35)" strokeWidth={1.8} />
             </button>
           </div>
         </div>
@@ -309,7 +273,7 @@ export default function Gastos() {
                   background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: c.color,
                 }}>
-                  {c.key === 'reparaciones' ? repIcon : catIcons[c.key as CatKey]}
+                  {c.key === 'reparaciones' ? <Wrench size={18} strokeWidth={1.8} /> : catIcons[c.key as CatKey]}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
@@ -318,9 +282,7 @@ export default function Gastos() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
-                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ color: 'rgba(20,20,19,0.25)' }}>
-                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <ChevronRight size={14} color="rgba(20,20,19,0.25)" strokeWidth={1.8} />
                 </div>
               </button>
             ))
@@ -336,9 +298,7 @@ export default function Gastos() {
             cursor: 'pointer', fontFamily: 'var(--font)',
             boxShadow: '0 4px 14px rgba(20,20,19,0.15)',
           }}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-              <path d="M3 12h18M3 6h18M3 18h12" stroke="#F3F0EE" strokeWidth="1.8" strokeLinecap="round"/>
-            </svg>
+            <AlignLeft size={14} color="#F3F0EE" strokeWidth={1.8} />
             <span style={{ fontSize: 13, fontWeight: 700, color: '#F3F0EE' }}>Ver historial</span>
           </button>
         </div>
@@ -392,7 +352,7 @@ export default function Gastos() {
                 <div style={{ position: 'absolute', right: -20, top: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
                   <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-                    {isRep ? repIcon : catIcons[selectedCat as CatKey]}
+                    {isRep ? <Wrench size={18} strokeWidth={1.8} /> : catIcons[selectedCat as CatKey]}
                   </div>
                   <div>
                     <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.4px' }}>{cat.label}</div>
@@ -403,9 +363,7 @@ export default function Gastos() {
                     background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
                   }}>
-                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
+                    <X size={14} strokeWidth={2} color="#fff" />
                   </button>
                 </div>
                 <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-1.5px', lineHeight: 1 }}>
