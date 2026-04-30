@@ -6,6 +6,14 @@ import type { GastoGeneral } from '../../types'
 
 type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro'
 
+interface RepDetalle {
+  id: string
+  descripcion: string
+  costo: number
+  fecha: string
+  vehiculos: { marca: string; modelo: string } | null
+}
+
 const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = {
   alquiler:  { label: 'Alquiler',  color: '#7A96B8', bg: 'rgba(122,150,184,0.12)' },
   servicios: { label: 'Servicios', color: '#7AAB8E', bg: 'rgba(122,171,142,0.12)' },
@@ -112,9 +120,10 @@ function RadialDistribution({ data, centerLabel, centerSub }: {
 export default function Gastos() {
   const navigate = useNavigate()
   const [gastos, setGastos] = useState<GastoGeneral[]>([])
-  const [repsData, setRepsData] = useState<{ costo: number; fecha: string }[]>([])
+  const [repsData, setRepsData] = useState<RepDetalle[]>([])
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [vista, setVista] = useState<'mes' | 'anio'>('mes')
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
   const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
@@ -123,10 +132,10 @@ export default function Gastos() {
     setLoading(true)
     Promise.all([
       supabase.from('gastos_generales').select('*').order('fecha', { ascending: false }),
-      supabase.from('reparaciones').select('costo, fecha'),
+      supabase.from('reparaciones').select('id, descripcion, costo, fecha, vehiculos(marca, modelo)').order('fecha', { ascending: false }),
     ]).then(([gRes, rRes]) => {
       setGastos(gRes.data ?? [])
-      setRepsData(rRes.data ?? [])
+      setRepsData((rRes.data ?? []) as unknown as RepDetalle[])
       setLoading(false)
     })
   }, [])
@@ -281,11 +290,20 @@ export default function Gastos() {
             </div>
           ) : (
             catTotals.map((c) => (
-              <div key={c.key} style={{
-                background: '#fff', borderRadius: 18, padding: '13px 16px',
-                display: 'flex', alignItems: 'center', gap: 14,
-                boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
-              }}>
+              <button
+                key={c.key}
+                onClick={() => setSelectedCat(c.key)}
+                style={{
+                  width: '100%', background: '#fff', borderRadius: 18, padding: '13px 16px',
+                  display: 'flex', alignItems: 'center', gap: 14,
+                  boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
+                  border: 'none', cursor: 'pointer', textAlign: 'left',
+                  transition: 'transform .12s, box-shadow .12s',
+                }}
+                onPointerDown={(e) => (e.currentTarget.style.transform = 'scale(0.98)')}
+                onPointerUp={(e) => (e.currentTarget.style.transform = '')}
+                onPointerLeave={(e) => (e.currentTarget.style.transform = '')}
+              >
                 <div style={{
                   width: 48, height: 48, borderRadius: 15, flexShrink: 0,
                   background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -300,8 +318,11 @@ export default function Gastos() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: c.color }} />
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style={{ color: 'rgba(20,20,19,0.25)' }}>
+                    <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
-              </div>
+              </button>
             ))
           )}
         </div>
@@ -329,6 +350,129 @@ export default function Gastos() {
           setSheetOpen(false)
         }} />
       )}
+
+      {selectedCat && (() => {
+        const cat = catTotals.find(c => c.key === selectedCat)
+        if (!cat) return null
+        const isRep = selectedCat === 'reparaciones'
+        const items = isRep
+          ? repsVista
+          : gastosVista.filter(g => g.categoria === selectedCat)
+        const fmtFecha = (f: string) =>
+          new Date(f + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+
+        return (
+          <>
+            {/* Backdrop */}
+            <div
+              onClick={() => setSelectedCat(null)}
+              style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.45)', backdropFilter: 'blur(6px)', zIndex: 80 }}
+            />
+
+            {/* Sheet */}
+            <div style={{
+              position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 90,
+              background: '#F7F5F2', borderRadius: '28px 28px 0 0',
+              maxHeight: '75vh', display: 'flex', flexDirection: 'column',
+              boxShadow: '0 -8px 40px rgba(20,20,19,0.2)',
+              animation: 'slideUp .32s cubic-bezier(.2,.8,.3,1)',
+            }}>
+              <style>{`@keyframes slideUp { from { transform:translateY(100%) } to { transform:translateY(0) } }`}</style>
+
+              {/* Drag handle */}
+              <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 8 }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+              </div>
+
+              {/* Colored header */}
+              <div style={{
+                margin: '0 16px 16px', borderRadius: 22, padding: '18px 20px',
+                background: cat.color, position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', right: -20, top: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                    {isRep ? repIcon : catIcons[selectedCat as CatKey]}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', letterSpacing: '-0.4px' }}>{cat.label}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{navLabel}</div>
+                  </div>
+                  <button onClick={() => setSelectedCat(null)} style={{
+                    marginLeft: 'auto', width: 32, height: 32, borderRadius: 10,
+                    background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff',
+                  }}>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                  </button>
+                </div>
+                <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-1.5px', lineHeight: 1 }}>
+                  {fmtUSD(cat.total)}
+                </div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>
+                  {items.length} {items.length === 1 ? 'registro' : 'registros'}
+                </div>
+              </div>
+
+              {/* Items list */}
+              <div className="scrollable" style={{ flex: 1, overflowY: 'auto', padding: '0 16px 40px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {items.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
+                    Sin registros en {navLabel}
+                  </div>
+                ) : isRep ? (
+                  (items as RepDetalle[]).map((r) => (
+                    <div key={r.id} style={{
+                      background: '#fff', borderRadius: 16, padding: '12px 16px',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
+                    }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {r.descripcion || 'Reparación'}
+                        </div>
+                        {r.vehiculos && (
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>
+                            {r.vehiculos.marca} {r.vehiculos.modelo}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: cat.color }}>
+                          -{fmtUSD(r.costo)}
+                        </div>
+                        <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>{fmtFecha(r.fecha)}</div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  (items as GastoGeneral[]).map((g) => (
+                    <div key={g.id} style={{
+                      background: '#fff', borderRadius: 16, padding: '12px 16px',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
+                    }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {g.descripcion}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{fmtFecha(g.fecha)}</div>
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: cat.color, flexShrink: 0 }}>
+                        -{fmtUSD(g.monto)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }
