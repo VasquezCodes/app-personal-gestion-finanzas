@@ -191,27 +191,28 @@ export default function Reportes() {
     })
   }, [vehiculos, gastos, anioNav, mesIdx, periodo, repTotals])
 
-  const totalGanancia = mesesData.reduce((a, m) => a + m.ganancia, 0)
   // Para el gráfico solo usamos valores positivos como referencia de altura
   const maxGanancia = Math.max(...mesesData.map((m) => m.ganancia), 1)
 
-  const gastosAnuales = gastos.filter((g) => g.fecha.startsWith(String(year))).reduce((a, g) => a + g.monto, 0)
-
-  // Ganancia bruta = lo que generaron los autos vendidos este año (sin descontar gastos generales)
-  const gananciaBrutaAnual = vehiculos
-    .filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(String(year)) && v.precio_venta)
-    .reduce((s, v) => s + v.precio_venta! - costoVehiculo(v), 0)
-
-  // Margen neto = ganancia neta (ya con gastos descontados) / ingresos por ventas del período
-  const ingresos6meses = useMemo(() =>
-    mesesData.reduce((a, m) =>
-      a + vehiculos
-        .filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(m.key))
-        .reduce((s, v) => s + (v.precio_venta ?? 0), 0),
-      0),
-    [mesesData, vehiculos]
+  // Ganancia del mes seleccionado (último elemento de mesesData en modo mes, o suma del año en modo año)
+  const mesKey = `${anioNav}-${String(mesIdx + 1).padStart(2, '0')}`
+  const gananciaMesSeleccionado = useMemo(() =>
+    mesesData.find(m => m.key === mesKey)?.ganancia ?? 0,
+    [mesesData, mesKey]
   )
-  const margen = ingresos6meses > 0 ? Math.round((totalGanancia / ingresos6meses) * 100) : 0
+
+  // Ganancia del año completo (anioNav) — suma neta de todos los meses
+  const gananciaAnual = useMemo(() => {
+    let total = 0
+    for (let i = 0; i < 12; i++) {
+      const key = `${anioNav}-${String(i + 1).padStart(2, '0')}`
+      const vendidos = vehiculos.filter(v => v.estado === 'vendido' && v.fecha_venta?.startsWith(key) && v.precio_venta)
+      const bruta = vendidos.reduce((s, v) => s + v.precio_venta! - costoVehiculo(v), 0)
+      const gastosM = gastos.filter(g => g.fecha.startsWith(key)).reduce((s, g) => s + g.monto, 0)
+      total += bruta - gastosM
+    }
+    return total
+  }, [vehiculos, gastos, anioNav, repTotals])
 
   const topVehiculos = useMemo(() =>
     vehiculos
@@ -286,8 +287,8 @@ export default function Reportes() {
 
   const topListRef = useRef<HTMLDivElement>(null)
   useStaggerIn(topListRef, [topVehiculos.length, periodo])
-  const totalGananciaDisplay = useCountUp(totalGanancia, auxReady)
-  const margenDisplay = auxReady ? `${margen}%` : '—'
+  const gananciaMesDisplay = useCountUp(gananciaMesSeleccionado, auxReady)
+  const gananciaAnualDisplay = useCountUp(gananciaAnual, auxReady)
 
   const handleExport = () => {
     const rows = [
@@ -449,22 +450,24 @@ export default function Reportes() {
           </div>
         )}
 
-        {/* KPI strip */}
+        {/* Dos KPIs claros */}
         <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
-          {[
-            { label: 'Ganancia total', value: auxReady ? totalGananciaDisplay : '—', color: '#F3F0EE', bg: 'var(--ink)', dark: true },
-            { label: 'Margen neto', value: margenDisplay, color: '#7AAB8E', bg: '#fff', dark: false },
-            { label: 'Mejor ROI', value: marcasData.length ? `${Math.round(Math.max(...marcasData.map((m) => m.roi)))}%` : '—', color: 'var(--ink)', bg: '#fff', dark: false },
-          ].map((k) => (
-            <div key={k.label} style={{
-              flex: 1, background: k.bg, borderRadius: 16, padding: '12px 12px',
-              boxShadow: k.dark ? '0 4px 14px rgba(20,20,19,0.15)' : '0 1px 8px rgba(20,20,19,0.05)',
-            }}>
-              <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.7,
-                color: k.dark ? 'rgba(243,240,238,0.45)' : 'var(--muted)', marginBottom: 4 }}>{k.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 900, color: k.color, letterSpacing: '-0.5px', lineHeight: 1 }}>{k.value}</div>
+          <div style={{ flex: 1, background: 'var(--ink)', borderRadius: 18, padding: '14px 16px', boxShadow: '0 4px 14px rgba(20,20,19,0.15)' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'rgba(243,240,238,0.45)', marginBottom: 4 }}>
+              {MESES_LARGOS[mesIdx].slice(0, 3)} {anioNav}
             </div>
-          ))}
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#F3F0EE', letterSpacing: '-0.8px', lineHeight: 1 }}>
+              {auxReady ? gananciaMesDisplay : '—'}
+            </div>
+          </div>
+          <div style={{ flex: 1, background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 1px 8px rgba(20,20,19,0.05)' }}>
+            <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', marginBottom: 4 }}>
+              Ganancia {anioNav}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: '#141413', letterSpacing: '-0.8px', lineHeight: 1 }}>
+              {auxReady ? gananciaAnualDisplay : '—'}
+            </div>
+          </div>
         </div>
 
         {/* Monthly bar chart */}
@@ -531,43 +534,6 @@ export default function Reportes() {
           </div>
         )}
 
-        {/* Bruto vs Gastos */}
-        {(gananciaBrutaAnual > 0 || gastosAnuales > 0) && (
-          <div style={{ padding: '12px 22px 0' }}>
-            <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 24, padding: '16px 16px', boxShadow: '0 1px 12px rgba(20,20,19,0.05)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>Bruto vs Gastos</div>
-                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                  Neto: <span style={{ fontWeight: 800, color: gananciaBrutaAnual - gastosAnuales >= 0 ? '#7AAB8E' : '#C07070' }}>
-                    {fmtN(gananciaBrutaAnual - gastosAnuales)}
-                  </span>
-                </div>
-              </div>
-              <div style={{ fontSize: 11, color: 'var(--muted)', marginBottom: 14 }}>Ganancia de autos vendidos vs gastos operativos</div>
-              {[
-                { label: 'Ganancia bruta', value: gananciaBrutaAnual, color: '#7AAB8E' },
-                { label: 'Gastos operativos', value: gastosAnuales, color: '#C07070' },
-              ].map((item) => {
-                const total = gananciaBrutaAnual + gastosAnuales
-                const pct = total > 0 ? Math.round((item.value / total) * 100) : 0
-                return (
-                  <div key={item.label} style={{ marginBottom: 12 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--ink2)' }}>{item.label}</span>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: 'var(--muted)' }}>{pct}%</span>
-                        <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)' }}>{fmtN(item.value)}</span>
-                      </div>
-                    </div>
-                    <div style={{ height: 6, background: 'rgba(20,20,19,0.06)', borderRadius: 999 }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: item.color, borderRadius: 999 }} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Proyección del próximo mes */}
         {proyeccionData.proyeccion > 0 && (
