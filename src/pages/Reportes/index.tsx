@@ -621,8 +621,8 @@ export default function Reportes() {
                           border: '0.5px solid rgba(255,255,255,0.1)',
                         }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.6)', marginBottom: 6 }}>{label}</div>
-                          {payload.map((p) => (
-                            <div key={p.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                          {payload.map((p, idx) => (
+                            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
                               <div style={{ width: 8, height: 8, borderRadius: 2, background: p.fill as string }} />
                               <span style={{ fontSize: 12, fontWeight: 700, color: '#F3F0EE' }}>
                                 {p.dataKey === 'inversion' ? 'Inversión' : 'Ingresos'}: {fmtN(p.value as number)}

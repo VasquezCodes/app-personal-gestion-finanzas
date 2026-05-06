@@ -203,7 +203,6 @@ export default function Dashboard() {
     todosVendidos.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0),
     [todosVendidos, repTotals]
   )
-  const roi = inversionTotal > 0 ? Math.round((gananciaTotal / inversionTotal) * 100) : 0
 
   // ROI del mes actual (solo sobre los vendidos de este mes)
   const costoVendidosMes = useMemo(() =>
