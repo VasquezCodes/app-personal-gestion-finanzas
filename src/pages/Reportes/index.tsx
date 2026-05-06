@@ -1,6 +1,6 @@
 import { memo, startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
 import { BRAND_LOGOS } from '../Inventario/CargarVehiculoSheet'
 import { supabase } from '../../lib/supabase'
@@ -196,6 +196,34 @@ export default function Reportes() {
       return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key, isFuture: false, autos }
     })
   }, [vehiculos, gastos, anioNav, mesIdx, periodo, repTotals])
+
+  // Datos Ingresos vs Inversión por mes
+  const invVsIngData = useMemo(() => {
+    const meses = periodo === 'anio'
+      ? Array.from({ length: 12 }, (_, i) => {
+          const key = `${anioNav}-${String(i + 1).padStart(2, '0')}`
+          const isFuture = anioNav === currentYear && key > currentMonthKey
+          return { key, isFuture }
+        })
+      : Array.from({ length: 6 }, (_, i) => {
+          const d = new Date(anioNav, mesIdx - 5 + i, 1)
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+          return { key, isFuture: false }
+        })
+
+    return meses
+      .map(({ key, isFuture }) => {
+        const label = new Date(key + '-01').toLocaleDateString('es-AR', { month: 'short', year: '2-digit' })
+          .replace(/^\w/, c => c.toUpperCase()).replace(' ', ' ')
+        if (isFuture) return { mes: label, inversion: 0, ingresos: 0, key, isFuture: true }
+        const comprados = vehiculos.filter(v => v.fecha_compra?.startsWith(key))
+        const vendidos  = vehiculos.filter(v => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
+        const inversion = comprados.reduce((s, v) => s + v.precio_compra + (v.gastos_adicionales ?? 0), 0)
+        const ingresos  = vendidos.reduce((s, v) => s + (v.precio_venta ?? 0), 0)
+        return { mes: label, inversion, ingresos, key, isFuture: false }
+      })
+      .filter(m => !m.isFuture && (m.inversion > 0 || m.ingresos > 0))
+  }, [vehiculos, anioNav, mesIdx, periodo, currentYear, currentMonthKey])
 
   // Para el gráfico solo usamos valores positivos como referencia de altura
   const maxGanancia = Math.max(...mesesData.map((m) => m.ganancia), 1)
@@ -551,6 +579,75 @@ export default function Reportes() {
             })()}
           </div>
         </div>
+
+        {/* Ingresos vs Inversión */}
+        {invVsIngData.length > 0 && (
+          <div style={{ padding: '12px 22px 0' }}>
+            <div style={{
+              background: '#1E2B38', borderRadius: 24,
+              padding: '20px 16px 16px',
+              boxShadow: '0 4px 24px rgba(20,20,19,0.14)',
+            }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#F3F0EE', marginBottom: 4 }}>
+                Ingresos vs Inversión
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(243,240,238,0.4)', marginBottom: 16 }}>
+                Por mes · {anioNav}
+              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={invVsIngData} barCategoryGap="30%" barGap={3}>
+                  <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.06)" />
+                  <XAxis
+                    dataKey="mes"
+                    tick={{ fontSize: 10, fill: 'rgba(243,240,238,0.45)', fontFamily: 'var(--font)', fontWeight: 600 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    tickFormatter={(v: number) => v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${v}`}
+                    tick={{ fontSize: 9, fill: 'rgba(243,240,238,0.35)', fontFamily: 'var(--font)' }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={36}
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null
+                      return (
+                        <div style={{
+                          background: '#29394A', borderRadius: 14, padding: '10px 14px',
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                          border: '0.5px solid rgba(255,255,255,0.1)',
+                        }}>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.6)', marginBottom: 6 }}>{label}</div>
+                          {payload.map((p) => (
+                            <div key={p.dataKey} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: 2, background: p.fill as string }} />
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#F3F0EE' }}>
+                                {p.dataKey === 'inversion' ? 'Inversión' : 'Ingresos'}: {fmtN(p.value as number)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    }}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    align="right"
+                    wrapperStyle={{ paddingBottom: 12, fontSize: 11, color: 'rgba(243,240,238,0.55)' }}
+                    formatter={(value) => value === 'inversion' ? 'Inversión' : 'Ingresos'}
+                    iconType="circle"
+                    iconSize={7}
+                  />
+                  <Bar dataKey="inversion" fill="#7A96B8" radius={[5, 5, 0, 0]} />
+                  <Bar dataKey="ingresos"  fill="#7AAB8E" radius={[5, 5, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* Top vehículos */}
         {topVehiculos.length > 0 && (
