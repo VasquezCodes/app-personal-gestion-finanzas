@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Home, Zap, Megaphone, User, MoreHorizontal,
-  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X,
+  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X, Trash2,
 } from 'lucide-react'
 import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
@@ -97,6 +97,7 @@ export default function Gastos() {
   const [loading, setLoading] = useState(true)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
+  const [editingGasto, setEditingGasto] = useState<GastoGeneral | null>(null)
   const [vista, setVista] = useState<'mes' | 'anio'>('mes')
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
   const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
@@ -298,6 +299,21 @@ export default function Gastos() {
         }} />
       )}
 
+      {editingGasto && (
+        <EditGastoSheet
+          gasto={editingGasto}
+          onClose={() => setEditingGasto(null)}
+          onSaved={(updated) => {
+            setGastos((prev) => prev.map((g) => g.id === updated.id ? updated : g))
+            setEditingGasto(null)
+          }}
+          onDeleted={(id) => {
+            setGastos((prev) => prev.filter((g) => g.id !== id))
+            setEditingGasto(null)
+          }}
+        />
+      )}
+
       {selectedCat && (() => {
         const cat = catTotals.find(c => c.key === selectedCat)
         if (!cat) return null
@@ -395,10 +411,11 @@ export default function Gastos() {
                   ))
                 ) : (
                   (items as GastoGeneral[]).map((g) => (
-                    <div key={g.id} style={{
-                      background: '#fff', borderRadius: 16, padding: '12px 16px',
+                    <button key={g.id} onClick={() => setEditingGasto(g)} style={{
+                      width: '100%', background: '#fff', borderRadius: 16, padding: '12px 16px',
                       display: 'flex', alignItems: 'center', gap: 12,
                       boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
+                      border: 'none', cursor: 'pointer', textAlign: 'left',
                     }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -407,10 +424,13 @@ export default function Gastos() {
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{fmtFecha(g.fecha)}</div>
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: cat.color, flexShrink: 0 }}>
-                        -{fmtUSD(g.monto)}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: cat.color }}>
+                          -{fmtUSD(g.monto)}
+                        </div>
+                        <ChevronRight size={13} color="rgba(20,20,19,0.2)" strokeWidth={2} />
                       </div>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
@@ -419,6 +439,99 @@ export default function Gastos() {
         )
       })()}
     </div>
+  )
+}
+
+function EditGastoSheet({ gasto, onClose, onSaved, onDeleted }: {
+  gasto: GastoGeneral
+  onClose: () => void
+  onSaved: (g: GastoGeneral) => void
+  onDeleted: (id: string) => void
+}) {
+  const [desc, setDesc] = useState(gasto.descripcion)
+  const [monto, setMonto] = useState(String(gasto.monto))
+  const [cat, setCat] = useState<CatKey>(gasto.categoria as CatKey)
+  const [fecha, setFecha] = useState(gasto.fecha)
+  const [saving, setSaving] = useState(false)
+  const [confirming, setConfirming] = useState(false)
+
+  async function handleSave() {
+    if (!desc || !monto) return
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('gastos_generales')
+      .update({ descripcion: desc, monto: parseFloat(monto), categoria: cat, fecha })
+      .eq('id', gasto.id)
+      .select().single()
+    setSaving(false)
+    if (!error && data) onSaved(data)
+  }
+
+  async function handleDelete() {
+    if (!confirming) { setConfirming(true); return }
+    setSaving(true)
+    await supabase.from('gastos_generales').delete().eq('id', gasto.id)
+    onDeleted(gasto.id)
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 100 }} />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
+        zIndex: 110, paddingBottom: 34,
+        boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
+        animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+        </div>
+        <div style={{ padding: '12px 22px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px' }}>Editar gasto</div>
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(20,20,19,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <X size={15} color="var(--ink)" strokeWidth={2} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Descripción"
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+            <input value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto (USD)" type="number"
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+            <select value={cat} onChange={(e) => setCat(e.target.value as CatKey)}
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
+              {(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][]).map(([k, v]) => (
+                <option key={k} value={k}>{v.label}</option>
+              ))}
+            </select>
+            <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date"
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+            <button onClick={handleSave} disabled={saving || !desc || !monto}
+              style={{
+                width: '100%', height: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: saving || !desc || !monto ? 'rgba(20,20,19,0.15)' : 'var(--ink)',
+                color: saving || !desc || !monto ? 'var(--muted)' : '#F3F0EE',
+                fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
+              }}>
+              {saving ? 'Guardando…' : 'Guardar cambios'}
+            </button>
+            <button onClick={handleDelete} disabled={saving}
+              style={{
+                width: '100%', height: 46, borderRadius: 999, border: 'none', cursor: 'pointer',
+                background: confirming ? 'rgba(192,112,112,0.15)' : 'transparent',
+                color: 'var(--red)',
+                fontSize: 14, fontWeight: 700, fontFamily: 'var(--font)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                transition: 'background .15s',
+              }}>
+              <Trash2 size={15} strokeWidth={2} />
+              {confirming ? 'Tocá de nuevo para confirmar' : 'Eliminar gasto'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
   )
 }
 
