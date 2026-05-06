@@ -10,23 +10,29 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'MotorHub',
         short_name: 'MotorHub',
         description: 'Gestión de inventario, gastos y reportes para dealership de autos',
-        theme_color: '#007AFF',
-        background_color: '#F2F2F7',
+        theme_color: '#F3F0EE',
+        background_color: '#F3F0EE',
         display: 'standalone',
         orientation: 'portrait',
         lang: 'es',
         start_url: '/',
         icons: [
           {
+            src: 'apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
             src: 'favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
         ],
       },
