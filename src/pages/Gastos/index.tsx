@@ -45,14 +45,14 @@ function RadialDistribution({ data, centerLabel, centerSub }: {
   centerSub: string
 }) {
   return (
-    <div style={{ width: 260, height: 260 }}>
+    <div style={{ width: 240, height: 240 }}>
       <ResponsiveContainer width="100%" height="100%">
         <RadialBarChart
           data={data}
           startAngle={90}
           endAngle={-270}
-          innerRadius={55}
-          outerRadius={115}
+          innerRadius={58}
+          outerRadius={108}
           cx="50%"
           cy="50%"
         >
@@ -66,15 +66,15 @@ function RadialDistribution({ data, centerLabel, centerSub }: {
                     <text x={viewBox.cx} y={viewBox.cy} textAnchor="middle" dominantBaseline="middle">
                       <tspan
                         x={viewBox.cx}
-                        y={(viewBox.cy ?? 0) - 10}
-                        style={{ fontSize: 15, fontWeight: 900, fill: '#141413', fontFamily: 'var(--font)' }}
+                        y={(viewBox.cy ?? 0) - 11}
+                        style={{ fontSize: 14, fontWeight: 900, fill: '#C07070', fontFamily: 'var(--font)' }}
                       >
                         {centerLabel}
                       </tspan>
                       <tspan
                         x={viewBox.cx}
-                        y={(viewBox.cy ?? 0) + 12}
-                        style={{ fontSize: 11, fill: '#9A9590', fontWeight: 500 }}
+                        y={(viewBox.cy ?? 0) + 10}
+                        style={{ fontSize: 10, fill: '#9A9590', fontWeight: 500 }}
                       >
                         {centerSub}
                       </tspan>
@@ -167,7 +167,7 @@ export default function Gastos() {
     }] : []),
   ].sort((a, b) => b.total - a.total)
 
-  const displayTotal = fmtUSD(grandTotal)
+  const displayTotal = grandTotal > 0 ? `−${fmtUSD(grandTotal)}` : fmtUSD(0)
   const centerSub = vista === 'mes' ? `${MESES[mesIdx].slice(0, 3)} ${anioNav}` : String(anioNav)
 
   return (
@@ -178,29 +178,72 @@ export default function Gastos() {
         paddingBottom: 120,
       }}>
         {/* Header */}
-        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px', fontFamily: 'var(--font)' }}>
-            Distribución
+        <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 20px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: 'var(--muted)' }}>
+              Gastos
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => navigate('/gastos/historial')} style={{
+                width: 36, height: 36, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
+                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              }}>
+                <Clock size={15} color="var(--ink2)" strokeWidth={1.8} />
+              </button>
+              <button onClick={() => setSheetOpen(true)} style={{
+                width: 36, height: 36, borderRadius: 12, background: 'var(--ink)',
+                border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
+              }}>
+                <Plus size={15} color="#F3F0EE" strokeWidth={2} />
+              </button>
+            </div>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => navigate('/gastos/historial')} style={{
-              width: 38, height: 38, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Clock size={16} color="var(--ink2)" strokeWidth={1.8} />
-            </button>
-            <button onClick={() => setSheetOpen(true)} style={{
-              width: 38, height: 38, borderRadius: 12, background: 'var(--ink)',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
-            }}>
-              <Plus size={16} color="#F3F0EE" strokeWidth={2} />
-            </button>
+
+          {/* Hero total */}
+          <div style={{
+            background: '#1E2B38',
+            borderRadius: 28, padding: '20px 22px 22px',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            {/* Decorative circle */}
+            <div style={{
+              position: 'absolute', right: -32, top: -32,
+              width: 140, height: 140, borderRadius: '50%',
+              background: 'rgba(192,112,112,0.10)',
+              pointerEvents: 'none',
+            }} />
+
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.4)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>
+              Total gastado · {navLabel}
+            </div>
+
+            <div style={{ fontSize: 48, fontWeight: 900, color: '#C07070', letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>
+              {loading ? '—' : displayTotal}
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: 12, color: 'rgba(243,240,238,0.4)', fontWeight: 500 }}>
+                {loading ? '···' : `${catTotals.length} ${catTotals.length === 1 ? 'categoría' : 'categorías'}`}
+              </div>
+              {!loading && grandTotal > 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 5,
+                  background: 'rgba(192,112,112,0.18)', borderRadius: 999,
+                  padding: '3px 10px',
+                }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C07070' }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#C07070' }}>
+                    {catTotals[0]?.label} · {catTotals[0]?.pct}%
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Radial chart */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
           {loading ? (
             <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : catTotals.length === 0 ? (
@@ -278,7 +321,7 @@ export default function Gastos() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{fmtUSD(c.total)}</div>
+                  <div style={{ fontSize: 12, color: '#C07070', marginTop: 2 }}>−{fmtUSD(c.total)}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
