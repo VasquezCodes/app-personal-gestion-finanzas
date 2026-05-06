@@ -205,6 +205,15 @@ export default function Dashboard() {
   )
   const roi = inversionTotal > 0 ? Math.round((gananciaTotal / inversionTotal) * 100) : 0
 
+  // ROI del mes actual (solo sobre los vendidos de este mes)
+  const costoVendidosMes = useMemo(() =>
+    vendidosMes.reduce((s, v) => s + costoVehiculo(v), 0),
+    [vendidosMes, repTotals]
+  )
+  const roiMes = costoVendidosMes > 0
+    ? Math.round((gananciaBrutaMes / costoVendidosMes) * 100)
+    : 0
+
   const total = vehiculos.length
   const inventarioPct = {
     stock: total > 0 ? Math.round((enStock.length / total) * 100) : 0,
@@ -377,13 +386,13 @@ export default function Dashboard() {
             <div style={{ fontSize: 52, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-2.5px', lineHeight: 1 }}>
               {loading || !auxReady ? '—' : gananciaMesDisplay}
             </div>
-            {roi > 0 && (
+            {roiMes > 0 && (
               <div style={{
                 marginTop: 6,
                 background: 'rgba(20,20,19,0.14)', borderRadius: 999,
                 padding: '5px 12px', fontSize: 12, fontWeight: 800, color: 'rgba(20,20,19,0.65)',
               }}>
-                ROI {roi}%
+                ROI {roiMes}%
               </div>
             )}
           </div>
@@ -391,7 +400,12 @@ export default function Dashboard() {
           {/* Subtitle + Toggle inline */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
             <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(20,20,19,0.45)' }}>
-              {auxReady ? `${roi}% ROI · ${vendidosMes.length} autos vendidos este mes` : '···'}
+              {auxReady
+                ? vendidosMes.length > 0
+                  ? `${roiMes}% ROI · ${vendidosMes.length} ${vendidosMes.length === 1 ? 'auto vendido' : 'autos vendidos'} este mes`
+                  : 'Sin ventas este mes'
+                : '···'
+              }
             </div>
             <div style={{ display: 'flex', background: 'rgba(20,20,19,0.12)', borderRadius: 999, padding: 2, flexShrink: 0 }}>
               {([{ id: 'semana', label: 'Semana' }, { id: 'anio', label: 'Año' }] as { id: 'semana'|'anio'; label: string }[]).map((o) => (
