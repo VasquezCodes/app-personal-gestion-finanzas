@@ -518,6 +518,28 @@ export default function Inventario() {
   const enStock = vehiculos.filter((v) => v.estado === 'en_stock')
   const valorInventario = enStock.reduce((a, v) => a + v.precio_compra, 0)
 
+  const MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+
+  const vehiculosPorMes = (() => {
+    const getFecha = (v: Vehiculo) =>
+      filtro === 'vendido' && v.fecha_venta ? v.fecha_venta : v.fecha_compra
+
+    const grupos: Record<string, Vehiculo[]> = {}
+    vehiculosFiltrados.forEach((v) => {
+      const f = getFecha(v)
+      const key = f ? f.slice(0, 7) : 'sin-fecha'
+      if (!grupos[key]) grupos[key] = []
+      grupos[key].push(v)
+    })
+    return Object.entries(grupos).sort(([a], [b]) => b.localeCompare(a))
+  })()
+
+  const fmtMesKey = (key: string) => {
+    if (key === 'sin-fecha') return 'Sin fecha'
+    const [y, m] = key.split('-')
+    return `${MESES[parseInt(m) - 1]} ${y}`
+  }
+
   const listRef = useRef<HTMLDivElement>(null)
   useStaggerIn(listRef, [vehiculosFiltrados.length, filtro, busqueda, loading])
 
@@ -636,83 +658,110 @@ export default function Inventario() {
           ))}
         </div>
 
-        {/* Vehicle list */}
-        <div ref={listRef} style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {/* Vehicle list agrupada por mes */}
+        <div ref={listRef} style={{ padding: '12px 22px 0' }}>
           {loading ? (
-            <>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[1, 2, 3].map((i) => (
                 <div key={i} style={{ height: 72, borderRadius: 22, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
-            </>
+            </div>
           ) : vehiculosFiltrados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>
               Sin resultados
             </div>
           ) : (
-            vehiculosFiltrados.map((v) => {
-              const costoV = v.precio_compra + (v.gastos_adicionales ?? 0) + (repTotals[v.id] ?? 0)
-              const ganancia = v.precio_venta ? v.precio_venta - costoV : null
-              const c = colorMap[v.estado] ?? colorMap.en_stock
-              const estadoLabel = v.estado === 'en_stock' ? 'En stock' : v.estado === 'vendido' ? 'Vendido' : v.estado === 'en_reparacion' ? 'Reparación' : 'Reservado'
-              return (
-                <button
-                  key={v.id}
-                  onClick={() => setSelected(v)}
-                  style={{
-                    background: 'rgba(255,255,255,0.85)',
-                    backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
-                    borderRadius: 22, padding: '14px 16px',
-                    boxShadow: '0 1px 12px rgba(20,20,19,0.05)',
-                    border: '0.5px solid rgba(20,20,19,0.06)',
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    cursor: 'pointer', textAlign: 'left', width: '100%',
-                  }}
-                >
-                  <div style={{
-                    width: 72, height: 58, borderRadius: 16, flexShrink: 0,
-                    background: '#fff',
-                    boxShadow: '0 1px 6px rgba(20,20,19,0.10)',
-                    border: `1.5px solid ${c.text}22`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '10px 12px',
+            vehiculosPorMes.map(([mesKey, autos]) => (
+              <div key={mesKey} style={{ marginBottom: 20 }}>
+                {/* Mes header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  marginBottom: 10,
+                }}>
+                  <span style={{
+                    fontSize: 12, fontWeight: 700, color: 'var(--muted)',
+                    textTransform: 'uppercase', letterSpacing: '0.06em',
                   }}>
-                    {BRAND_LOGOS[v.marca] ? (
-                      <img
-                        src={BRAND_LOGOS[v.marca]}
-                        alt={v.marca}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.88 }}
-                      />
-                    ) : (
-                      <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
-                        <path d="M5 11l2-5h10l2 5" stroke={c.text} strokeWidth="1.8" strokeLinecap="round"/>
-                        <rect x="2" y="11" width="20" height="7" rx="3" stroke={c.text} strokeWidth="1.8"/>
-                        <circle cx="7" cy="18" r="2" fill={c.text}/>
-                        <circle cx="17" cy="18" r="2" fill={c.text}/>
-                      </svg>
-                    )}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {v.marca} {v.modelo}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                      {v.anio}{v.color ? ` · ${v.color}` : ''}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
-                    <span style={{
-                      fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
-                      background: c.bg, color: c.text, letterSpacing: 0.2,
-                    }}>{estadoLabel}</span>
-                    {ganancia != null ? (
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#7AAB8E' }}>+{fmtShort(ganancia)}</span>
-                    ) : (
-                      <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
-                    )}
-                  </div>
-                </button>
-              )
-            })
+                    {fmtMesKey(mesKey)}
+                  </span>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    color: 'var(--muted)',
+                    background: 'rgba(20,20,19,0.07)',
+                    padding: '2px 7px', borderRadius: 999,
+                  }}>{autos.length}</span>
+                  <div style={{ flex: 1, height: '0.5px', background: 'rgba(20,20,19,0.10)' }} />
+                </div>
+
+                {/* Cards del mes */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {autos.map((v) => {
+                    const costoV = v.precio_compra + (v.gastos_adicionales ?? 0) + (repTotals[v.id] ?? 0)
+                    const ganancia = v.precio_venta ? v.precio_venta - costoV : null
+                    const c = colorMap[v.estado] ?? colorMap.en_stock
+                    const estadoLabel = v.estado === 'en_stock' ? 'En stock' : v.estado === 'vendido' ? 'Vendido' : v.estado === 'en_reparacion' ? 'Reparación' : 'Reservado'
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => setSelected(v)}
+                        style={{
+                          background: 'rgba(255,255,255,0.85)',
+                          backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                          borderRadius: 22, padding: '14px 16px',
+                          boxShadow: '0 1px 12px rgba(20,20,19,0.05)',
+                          border: '0.5px solid rgba(20,20,19,0.06)',
+                          display: 'flex', alignItems: 'center', gap: 14,
+                          cursor: 'pointer', textAlign: 'left', width: '100%',
+                        }}
+                      >
+                        <div style={{
+                          width: 72, height: 58, borderRadius: 16, flexShrink: 0,
+                          background: '#fff',
+                          boxShadow: '0 1px 6px rgba(20,20,19,0.10)',
+                          border: `1.5px solid ${c.text}22`,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '10px 12px',
+                        }}>
+                          {BRAND_LOGOS[v.marca] ? (
+                            <img
+                              src={BRAND_LOGOS[v.marca]}
+                              alt={v.marca}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.88 }}
+                            />
+                          ) : (
+                            <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                              <path d="M5 11l2-5h10l2 5" stroke={c.text} strokeWidth="1.8" strokeLinecap="round"/>
+                              <rect x="2" y="11" width="20" height="7" rx="3" stroke={c.text} strokeWidth="1.8"/>
+                              <circle cx="7" cy="18" r="2" fill={c.text}/>
+                              <circle cx="17" cy="18" r="2" fill={c.text}/>
+                            </svg>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {v.marca} {v.modelo}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                            {v.anio}{v.color ? ` · ${v.color}` : ''}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5, flexShrink: 0 }}>
+                          <span style={{
+                            fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999,
+                            background: c.bg, color: c.text, letterSpacing: 0.2,
+                          }}>{estadoLabel}</span>
+                          {ganancia != null ? (
+                            <span style={{ fontSize: 13, fontWeight: 800, color: '#7AAB8E' }}>+{fmtShort(ganancia)}</span>
+                          ) : (
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))
           )}
         </div>
       </div>
