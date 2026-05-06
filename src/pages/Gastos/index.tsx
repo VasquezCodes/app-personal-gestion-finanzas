@@ -200,46 +200,6 @@ export default function Gastos() {
             </div>
           </div>
 
-          {/* Hero total */}
-          <div style={{
-            background: '#1E2B38',
-            borderRadius: 28, padding: '20px 22px 22px',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            {/* Decorative circle */}
-            <div style={{
-              position: 'absolute', right: -32, top: -32,
-              width: 140, height: 140, borderRadius: '50%',
-              background: 'rgba(192,112,112,0.10)',
-              pointerEvents: 'none',
-            }} />
-
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.4)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 8 }}>
-              Total gastado · {navLabel}
-            </div>
-
-            <div style={{ fontSize: 48, fontWeight: 900, color: '#C07070', letterSpacing: '-2px', lineHeight: 1, marginBottom: 8 }}>
-              {loading ? '—' : displayTotal}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ fontSize: 12, color: 'rgba(243,240,238,0.4)', fontWeight: 500 }}>
-                {loading ? '···' : `${catTotals.length} ${catTotals.length === 1 ? 'categoría' : 'categorías'}`}
-              </div>
-              {!loading && grandTotal > 0 && (
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: 'rgba(192,112,112,0.18)', borderRadius: 999,
-                  padding: '3px 10px',
-                }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#C07070' }} />
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#C07070' }}>
-                    {catTotals[0]?.label} · {catTotals[0]?.pct}%
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Radial chart */}
