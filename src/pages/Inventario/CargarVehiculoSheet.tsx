@@ -79,7 +79,7 @@ export const BRAND_LOGOS: Record<string, string> = {
   'Mitsubishi':    '/carBrands/mitsubishi-svgrepo-com.svg',
   'Nissan':        '/carBrands/nissan-svgrepo-com.svg',
   'Toyota':        '/carBrands/toyota-svgrepo-com.svg',
-  'Volkswagen':    '/carBrands/volkswagen-1.svg',
+  'Volkswagen':    '/carBrands/Volkswagen_logo_2019.svg',
 }
 
 const MARCA_NOMBRES = Object.keys(BRAND_LOGOS)

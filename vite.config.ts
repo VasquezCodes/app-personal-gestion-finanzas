@@ -12,8 +12,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'AutoDealer',
-        short_name: 'AutoDealer',
+        name: 'MotorHub',
+        short_name: 'MotorHub',
         description: 'Gestión de inventario, gastos y reportes para dealership de autos',
         theme_color: '#007AFF',
         background_color: '#F2F2F7',

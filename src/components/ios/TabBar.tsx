@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 
-const SUB_ROUTES = ['/gastos/historial', '/gastos/reparaciones', '/reportes/historial']
+const SUB_ROUTES = ['/gastos/historial', '/gastos/reparaciones', '/reportes/historial', '/dashboard/resumen']
 
 const tabs = [
   {

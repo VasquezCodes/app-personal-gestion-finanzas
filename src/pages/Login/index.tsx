@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, Car } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
 
@@ -13,29 +13,15 @@ const schema = z.object({
 })
 type LoginForm = z.infer<typeof schema>
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
-        {label}
-      </label>
-      <div
-        className="rounded-xl px-4 py-3.5"
-        style={{
-          background: 'var(--bg-input)',
-          border: error ? '1.5px solid var(--red)' : '1.5px solid var(--separator)',
-        }}
-      >
-        {children}
-      </div>
-      {error && <p className="text-[12px] pl-1" style={{ color: 'var(--red)' }}>{error}</p>}
-    </div>
-  )
-}
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 18 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
+})
 
 export default function Login() {
-  const signIn    = useAuthStore((s) => s.signIn)
-  const navigate  = useNavigate()
+  const signIn   = useAuthStore((s) => s.signIn)
+  const navigate = useNavigate()
   const [showPwd, setShowPwd] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
@@ -52,100 +38,225 @@ export default function Login() {
 
   return (
     <div
-      className="min-h-svh flex flex-col items-center justify-center px-6 py-12"
+      className="min-h-svh flex flex-col items-center justify-center px-6 py-16 relative overflow-hidden"
       style={{ background: 'var(--bg)', fontFamily: 'var(--font-primary)' }}
     >
-      {/* Logo */}
+      {/* Ambient blob */}
+      <div
+        aria-hidden
+        style={{
+          position: 'absolute', top: '-5%', right: '-20%',
+          width: 360, height: 360, borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(20,20,19,0.04) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* ── Brand ── */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
         className="flex flex-col items-center mb-10"
+        {...fadeUp(0)}
       >
-        <div
-          className="w-20 h-20 rounded-[28px] flex items-center justify-center mb-5"
+        {/* Logo mark + wordmark */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}
+        >
+          <svg width="56" height="36" viewBox="0 0 52 34" fill="none">
+            <path d="M4 30 A22 22 0 0 1 48 30" stroke="rgba(20,20,19,0.12)" strokeWidth="4" strokeLinecap="round"/>
+            <path d="M4 30 A22 22 0 0 1 38 8" stroke="var(--ink)" strokeWidth="4" strokeLinecap="round"/>
+            <line x1="26" y1="30" x2="35" y2="10" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round"/>
+            <circle cx="26" cy="30" r="4" fill="var(--ink)"/>
+            <circle cx="26" cy="30" r="2" fill="var(--cream)"/>
+          </svg>
+          <div style={{ lineHeight: 1 }}>
+            <span style={{ fontSize: 34, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-1.5px', fontFamily: 'var(--font)' }}>Motor</span>
+            <span style={{ fontSize: 34, fontWeight: 300, color: 'var(--ink)', letterSpacing: '-1.5px', fontFamily: 'var(--font)' }}>Hub</span>
+          </div>
+        </motion.div>
+
+        <motion.p
+          {...fadeUp(0.14)}
           style={{
-            background: 'var(--green-bg)',
-            border: '1px solid rgba(0,204,126,0.2)',
-            boxShadow: 'var(--shadow-glow-green)',
+            fontSize: 14,
+            color: 'var(--muted)',
+            marginTop: 6,
+            letterSpacing: '0.01em',
           }}
         >
-          <Car size={36} color="var(--green)" strokeWidth={1.8} />
-        </div>
-        <h1 className="text-[30px] font-bold" style={{ color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-          AutoDealer
-        </h1>
-        <p className="text-[14px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-          Gestión de tu dealership
-        </p>
+          Tu dealership. Siempre bajo control.
+        </motion.p>
       </motion.div>
 
-      {/* Form */}
-      <motion.form
-        onSubmit={handleSubmit(onSubmit)}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45, delay: 0.1 }}
-        className="w-full max-w-sm flex flex-col gap-4"
-        noValidate
+      {/* ── Form card ── */}
+      <motion.div
+        {...fadeUp(0.2)}
+        style={{
+          width: '100%', maxWidth: 360,
+          background: '#FFFFFF',
+          borderRadius: 28,
+          padding: '28px 24px',
+          boxShadow: '0 4px 40px rgba(20,20,19,0.07)',
+          border: '1px solid rgba(20,20,19,0.05)',
+        }}
       >
-        <Field label="Email" error={errors.email?.message}>
-          <input
-            {...register('email')}
-            type="email"
-            autoComplete="email"
-            inputMode="email"
-            placeholder="nombre@email.com"
-            className="w-full text-[16px] outline-none bg-transparent"
-            style={{ color: 'var(--text-primary)' }}
-          />
-        </Field>
+        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
 
-        <Field label="Contraseña" error={errors.password?.message}>
-          <div className="flex items-center gap-2">
+          {/* Email */}
+          <InputField label="Email" error={errors.email?.message}>
             <input
-              {...register('password')}
-              type={showPwd ? 'text' : 'password'}
-              autoComplete="current-password"
-              placeholder="••••••••"
-              className="flex-1 text-[16px] outline-none bg-transparent"
-              style={{ color: 'var(--text-primary)' }}
+              {...register('email')}
+              type="email"
+              autoComplete="email"
+              inputMode="email"
+              placeholder="nombre@email.com"
+              style={inputStyle}
             />
-            <button type="button" onClick={() => setShowPwd(!showPwd)} className="active:opacity-60">
-              {showPwd
-                ? <EyeOff size={18} color="var(--text-secondary)" />
-                : <Eye size={18} color="var(--text-secondary)" />
-              }
-            </button>
-          </div>
-        </Field>
+          </InputField>
 
-        {errorMsg && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="rounded-xl px-4 py-3 text-center text-[14px] font-medium"
-            style={{ background: 'var(--red-bg)', color: 'var(--red)' }}
+          {/* Contraseña */}
+          <InputField label="Contraseña" error={errors.password?.message}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                {...register('password')}
+                type={showPwd ? 'text' : 'password'}
+                autoComplete="current-password"
+                placeholder="••••••••"
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPwd(!showPwd)}
+                style={{ flexShrink: 0, lineHeight: 0, opacity: 0.5, cursor: 'pointer' }}
+              >
+                {showPwd
+                  ? <EyeOff size={18} color="var(--ink)" />
+                  : <Eye size={18} color="var(--ink)" />
+                }
+              </button>
+            </div>
+          </InputField>
+
+          {/* Error */}
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                borderRadius: 12,
+                padding: '10px 14px',
+                textAlign: 'center',
+                fontSize: 13,
+                fontWeight: 500,
+                background: 'var(--red-bg)',
+                color: 'var(--red)',
+              }}
+            >
+              {errorMsg}
+            </motion.div>
+          )}
+
+          {/* CTA */}
+          <motion.button
+            type="submit"
+            disabled={isSubmitting}
+            whileTap={{ scale: 0.97 }}
+            style={{
+              marginTop: 4,
+              width: '100%',
+              borderRadius: 20,
+              padding: '16px 0',
+              fontSize: 16,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              background: isSubmitting ? 'var(--neutral-700)' : 'var(--ink)',
+              color: '#FFFFFF',
+              border: 'none',
+              cursor: isSubmitting ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              fontFamily: 'var(--font-primary)',
+              boxShadow: '0 4px 20px rgba(20,20,19,0.18)',
+              transition: 'background 200ms ease',
+            }}
           >
-            {errorMsg}
-          </motion.div>
-        )}
+            {isSubmitting
+              ? <Loader2 size={20} className="animate-spin" />
+              : 'Ingresar'
+            }
+          </motion.button>
+        </form>
+      </motion.div>
 
-        <motion.button
-          type="submit"
-          disabled={isSubmitting}
-          whileTap={{ scale: 0.97 }}
-          className="w-full rounded-xl py-4 text-[16px] font-semibold flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
-          style={{
-            background: 'var(--green)',
-            color: '#fff',
-            boxShadow: 'var(--shadow-glow-green)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : 'Ingresar'}
-        </motion.button>
-      </motion.form>
+      {/* Footer */}
+      <motion.p
+        {...fadeUp(0.3)}
+        style={{
+          marginTop: 32,
+          fontSize: 12,
+          color: 'var(--text-tertiary)',
+          letterSpacing: '0.02em',
+          textAlign: 'center',
+        }}
+      >
+        MotorHub · Uso privado
+      </motion.p>
     </div>
   )
+}
+
+function InputField({
+  label, error, children,
+}: {
+  label: string
+  error?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <label
+        style={{
+          fontSize: 11,
+          fontWeight: 700,
+          textTransform: 'uppercase',
+          letterSpacing: '0.08em',
+          color: 'var(--muted)',
+          fontFamily: 'var(--font-primary)',
+        }}
+      >
+        {label}
+      </label>
+      <div
+        style={{
+          borderRadius: 14,
+          padding: '13px 16px',
+          background: 'var(--bg)',
+          border: error
+            ? '1.5px solid var(--red)'
+            : '1.5px solid rgba(20,20,19,0.08)',
+        }}
+      >
+        {children}
+      </div>
+      {error && (
+        <p style={{ fontSize: 12, color: 'var(--red)', margin: 0, paddingLeft: 2 }}>
+          {error}
+        </p>
+      )}
+    </div>
+  )
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  fontSize: 16,
+  background: 'transparent',
+  border: 'none',
+  outline: 'none',
+  color: 'var(--ink)',
+  fontFamily: 'var(--font-primary)',
 }

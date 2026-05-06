@@ -11,7 +11,7 @@ import { useBarGrow } from '../../hooks/animations/useBarGrow'
 
 const fmtShort = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
-type BarItem = { dia: string; ganancia: number; autos: { marca: string; modelo: string; ganancia: number }[] }
+type BarItem = { dia: string; ganancia: number; isFuture?: boolean; autos: { marca: string; modelo: string; ganancia: number }[] }
 
 const LABEL_H = 22
 
@@ -27,7 +27,7 @@ function BarChart({ data, color = '#141413', height = 96, onSelect, selected }: 
         const h = item.ganancia > 0 ? Math.max(8, Math.round((item.ganancia / max) * barZoneH)) : 4
         const isMax = item.ganancia === Math.max(...data.map((d) => d.ganancia)) && item.ganancia > 0
         const isSel = selected === i
-        const isFuture = item.ganancia === 0
+        const isFuture = item.isFuture ?? false
         const showLabel = isSel || (isMax && !isSel)
         return (
           <div
@@ -230,6 +230,7 @@ export default function Dashboard() {
       return {
         dia: diasCortos[d.getDay()],
         ganancia,
+        isFuture,
         autos: vs.map((v) => ({ marca: v.marca, modelo: v.modelo, ganancia: v.precio_venta ? v.precio_venta - costoVehiculo(v) : 0 })),
       }
     })
@@ -238,13 +239,16 @@ export default function Dashboard() {
   const anualDataFull = useMemo((): BarItem[] => {
     const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
     const y = new Date().getFullYear()
+    const isoToday = new Date().toISOString().slice(0, 7)
     return Array.from({ length: 12 }).map((_, i) => {
       const key = `${y}-${String(i + 1).padStart(2, '0')}`
-      const vs = vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
+      const isFuture = key > isoToday
+      const vs = isFuture ? [] : vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
       const ganancia = vs.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0)
       return {
         dia: meses[i],
         ganancia,
+        isFuture,
         autos: vs.map((v) => ({ marca: v.marca, modelo: v.modelo, ganancia: v.precio_venta ? v.precio_venta - costoVehiculo(v) : 0 })),
       }
     })
@@ -570,12 +574,15 @@ export default function Dashboard() {
 
       {/* Gastos/Capital card */}
       <div style={{ padding: '12px 20px 0', position: 'relative', zIndex: 1 }}>
-        <div style={{
-          background: '#1E2B38', borderRadius: 'var(--r-card)',
-          padding: '18px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          boxShadow: '0 4px 24px rgba(20,20,19,0.14)',
-          border: '0.5px solid rgba(255,255,255,0.06)',
-        }}>
+        <button
+          onClick={() => navigate('/dashboard/resumen')}
+          style={{
+            width: '100%', background: '#1E2B38', borderRadius: 'var(--r-card)',
+            padding: '18px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            boxShadow: '0 4px 24px rgba(20,20,19,0.14)',
+            border: '0.5px solid rgba(255,255,255,0.06)',
+            cursor: 'pointer', textAlign: 'left',
+          }}>
           <div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(243,240,238,0.5)', textTransform: 'uppercase', letterSpacing: 0.8 }}>Capital invertido</div>
             <div style={{ fontSize: 28, fontWeight: 800, color: '#F3F0EE', letterSpacing: '-0.8px', marginTop: 4 }}>{fmtShort(inversionTotal)}</div>
@@ -591,7 +598,7 @@ export default function Dashboard() {
               <path d="M12 6v6l4 2" stroke="rgba(243,240,238,0.8)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </div>
-        </div>
+        </button>
       </div>
 
       {/* Actividad reciente */}

@@ -118,6 +118,7 @@ export default function Reportes() {
   const [metricaMarca, setMetricaMarca] = useState<MetricaMarca>('ganancia')
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
   const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
+  const [selectedBar, setSelectedBar] = useState<number | null>(null)
 
   useEffect(() => {
     fetchVehiculos()
@@ -144,6 +145,7 @@ export default function Reportes() {
 
   // Navigator handlers — mes wraps into adjacent years
   const prevNav = () => startTransition(() => {
+    setSelectedBar(null)
     if (periodo === 'mes') {
       if (mesIdx === 0) { setMesIdx(11); setAnioNav(a => a - 1) }
       else setMesIdx(m => m - 1)
@@ -153,6 +155,7 @@ export default function Reportes() {
   })
   const nextNav = () => startTransition(() => {
     if (atCurrentMonth || atCurrentYear) return
+    setSelectedBar(null)
     if (periodo === 'mes') {
       if (mesIdx === 11) { setMesIdx(0); setAnioNav(a => a + 1) }
       else setMesIdx(m => m + 1)
@@ -167,19 +170,21 @@ export default function Reportes() {
 
   const year = anioNav
 
+  const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+
   const mesesData = useMemo(() => {
     if (periodo === 'anio') {
-      // 12 meses del año seleccionado
       return Array.from({ length: 12 }).map((_, i) => {
         const key = `${anioNav}-${String(i + 1).padStart(2, '0')}`
+        const isFuture = anioNav === currentYear && key > currentMonthKey
         const mes = new Date(anioNav, i, 1).toLocaleDateString('es-AR', { month: 'short' }).replace(/^\w/, (c) => c.toUpperCase()).slice(0, 3)
-        const vendidos = vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
+        const vendidos = isFuture ? [] : vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
         const brutaMes = vendidos.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0)
         const gastosMes = gastos.filter((g) => g.fecha.startsWith(key)).reduce((s, g) => s + g.monto, 0)
-        return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key }
+        const autos = vendidos.map((v) => ({ marca: v.marca, modelo: v.modelo, ganancia: v.precio_venta ? v.precio_venta - costoVehiculo(v) : 0 }))
+        return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key, isFuture, autos }
       })
     }
-    // 6 meses terminando en el mes seleccionado
     return Array.from({ length: 6 }).map((_, i) => {
       const d = new Date(anioNav, mesIdx - 5 + i, 1)
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -187,7 +192,8 @@ export default function Reportes() {
       const vendidos = vehiculos.filter((v) => v.estado === 'vendido' && v.fecha_venta?.startsWith(key))
       const brutaMes = vendidos.reduce((s, v) => v.precio_venta ? s + v.precio_venta - costoVehiculo(v) : s, 0)
       const gastosMes = gastos.filter((g) => g.fecha.startsWith(key)).reduce((s, g) => s + g.monto, 0)
-      return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key }
+      const autos = vendidos.map((v) => ({ marca: v.marca, modelo: v.modelo, ganancia: v.precio_venta ? v.precio_venta - costoVehiculo(v) : 0 }))
+      return { mes, ganancia: brutaMes - gastosMes, ventas: vendidos.length, key, isFuture: false, autos }
     })
   }, [vehiculos, gastos, anioNav, mesIdx, periodo, repTotals])
 
@@ -222,6 +228,7 @@ export default function Reportes() {
         const ganancia = v.precio_venta! - costo
         return {
           nombre: `${v.marca} ${v.modelo} ${v.anio}`,
+          marca: v.marca,
           ganancia,
           roi: Math.round((ganancia / costo) * 100),
         }
@@ -330,7 +337,7 @@ export default function Reportes() {
         {/* Header */}
         <div style={{ padding: 'calc(env(safe-area-inset-top) + 16px) 22px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px', fontFamily: 'var(--font)' }}>
-            Distribución
+            Ganancia por marca
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => navigate('/reportes/historial')} style={{
@@ -480,25 +487,68 @@ export default function Reportes() {
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 100 }}>
               {mesesData.map((m, i) => {
                 const isNegative = m.ganancia < 0
-                const isEmpty = m.ganancia === 0
+                const isFuture = m.isFuture
                 const barH = m.ganancia > 0 ? Math.max(10, Math.round((m.ganancia / maxGanancia) * 80)) : 4
-                const isActive = m.ganancia === maxGanancia && m.ganancia > 0
-                const barColor = isNegative ? '#C07070' : isEmpty ? 'rgba(20,20,19,0.06)' : isActive ? 'var(--ink)' : 'rgba(20,20,19,0.18)'
+                const isMax = m.ganancia === maxGanancia && m.ganancia > 0
+                const isSel = selectedBar === i
+                const showLabel = isSel || (isMax && !isSel && !isFuture)
+                const barColor = isSel ? '#141413' : isNegative ? '#C07070' : isFuture ? 'rgba(20,20,19,0.06)' : isMax ? 'rgba(20,20,19,0.85)' : 'rgba(20,20,19,0.18)'
                 return (
-                  <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-                    {(isActive || isNegative) && (
-                      <div style={{ background: isNegative ? '#C07070' : 'var(--ink)', color: '#F3F0EE', fontSize: 8, fontWeight: 700, padding: '2px 4px', borderRadius: 4, whiteSpace: 'nowrap' }}>
-                        {fmtN(m.ganancia)}
-                      </div>
-                    )}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%' }}>
-                      <div style={{ width: '100%', height: barH, borderRadius: 6, background: barColor }} />
+                  <div
+                    key={i}
+                    onClick={() => !isFuture && setSelectedBar(selectedBar === i ? null : i)}
+                    style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: isFuture ? 'default' : 'pointer' }}
+                  >
+                    <div style={{ height: 18, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      {showLabel && (
+                        <div style={{ background: isNegative ? '#C07070' : '#141413', color: '#F3F0EE', fontSize: 8, fontWeight: 700, padding: '2px 4px', borderRadius: 4, whiteSpace: 'nowrap' }}>
+                          {fmtN(m.ganancia)}
+                        </div>
+                      )}
                     </div>
-                    <span style={{ fontSize: 9, color: isEmpty ? 'rgba(20,20,19,0.25)' : 'var(--muted)', fontWeight: 500 }}>{m.mes}</span>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end', width: '100%' }}>
+                      <div style={{
+                        width: '100%', height: barH, borderRadius: 6, background: barColor, transition: 'all .18s',
+                        outline: isSel ? '2px solid rgba(20,20,19,0.35)' : 'none', outlineOffset: 2,
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 9, color: isSel ? 'rgba(20,20,19,0.8)' : isFuture ? 'rgba(20,20,19,0.2)' : 'var(--muted)', fontWeight: isSel ? 700 : 500 }}>{m.mes}</span>
                   </div>
                 )
               })}
             </div>
+
+            {/* Panel detalle del mes seleccionado */}
+            {selectedBar !== null && mesesData[selectedBar] && (() => {
+              const sel = mesesData[selectedBar]
+              return (
+                <div style={{
+                  marginTop: 12, background: 'rgba(20,20,19,0.06)',
+                  borderRadius: 14, padding: '10px 12px',
+                  animation: 'fadeInUp .18s ease',
+                }}>
+                  <style>{`@keyframes fadeInUp { from { opacity:0; transform:translateY(4px) } to { opacity:1; transform:translateY(0) } }`}</style>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(20,20,19,0.5)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 7 }}>
+                    {sel.mes} · {sel.autos.length} {sel.autos.length === 1 ? 'auto vendido' : 'autos vendidos'}
+                  </div>
+                  {sel.autos.length === 0 ? (
+                    <div style={{ fontSize: 11, color: 'rgba(20,20,19,0.4)', fontStyle: 'italic' }}>Sin ventas este mes</div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                      {sel.autos.map((a, j) => (
+                        <div key={j} style={{
+                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                          background: 'rgba(255,255,255,0.6)', borderRadius: 10, padding: '6px 10px',
+                        }}>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{a.marca} {a.modelo}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: '#4A7A5A' }}>+{fmtN(a.ganancia)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         </div>
 
@@ -516,11 +566,37 @@ export default function Reportes() {
                   boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
                   border: '0.5px solid rgba(20,20,19,0.06)',
                 }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: 10, background: 'rgba(20,20,19,0.07)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 13, fontWeight: 800, color: 'var(--ink)',
-                  }}>#{i + 1}</div>
+                  {/* Logo con badge de ranking */}
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{
+                      width: 44, height: 44, borderRadius: 14,
+                      background: BRAND_LOGOS[v.marca] ? '#fff' : 'rgba(20,20,19,0.07)',
+                      border: '1.5px solid rgba(20,20,19,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: BRAND_LOGOS[v.marca] ? 9 : 0,
+                    }}>
+                      {BRAND_LOGOS[v.marca] ? (
+                        <img
+                          src={BRAND_LOGOS[v.marca]}
+                          alt={v.marca}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.85 }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
+                          {v.marca.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{
+                      position: 'absolute', bottom: -4, right: -4,
+                      width: 18, height: 18, borderRadius: 6,
+                      background: i === 0 ? '#141413' : 'rgba(20,20,19,0.15)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 9, fontWeight: 800,
+                      color: i === 0 ? '#F3F0EE' : 'var(--ink)',
+                      border: '1.5px solid #fff',
+                    }}>#{i + 1}</div>
+                  </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.nombre}</div>
                   </div>

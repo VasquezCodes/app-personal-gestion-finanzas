@@ -14,6 +14,7 @@ import Configuracion from './pages/Configuracion'
 import HistorialGastos from './pages/Gastos/HistorialGastos'
 import HistorialGanancias from './pages/Reportes/HistorialGanancias'
 import ReparacionesGastos from './pages/Gastos/Reparaciones'
+import EstadoResultados from './pages/Dashboard/EstadoResultados'
 import { useAuthStore } from './store/authStore'
 
 function AppLayout() {
@@ -37,6 +38,7 @@ function AppLayout() {
           <Route path="/gastos/reparaciones" element={<ReparacionesGastos />} />
           <Route path="/reportes/historial" element={<HistorialGanancias />} />
           <Route path="/reportes" element={<Reportes />} />
+          <Route path="/dashboard/resumen" element={<EstadoResultados />} />
           <Route path="/configuracion" element={<Configuracion />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
