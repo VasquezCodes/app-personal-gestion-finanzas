@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Home, Zap, Megaphone, User, MoreHorizontal,
-  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X, AlignLeft,
+  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
@@ -289,19 +289,6 @@ export default function Gastos() {
           )}
         </div>
 
-        {/* Quick action */}
-        <div style={{ padding: '14px 16px 0' }}>
-          <button onClick={() => navigate('/gastos/historial')} style={{
-            width: '100%', height: 46, borderRadius: 16,
-            background: 'var(--ink)', border: 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-            cursor: 'pointer', fontFamily: 'var(--font)',
-            boxShadow: '0 4px 14px rgba(20,20,19,0.15)',
-          }}>
-            <AlignLeft size={14} color="#F3F0EE" strokeWidth={1.8} />
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#F3F0EE' }}>Ver historial</span>
-          </button>
-        </div>
       </div>
 
       {sheetOpen && (
