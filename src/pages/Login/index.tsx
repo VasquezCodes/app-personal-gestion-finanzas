@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { motion } from 'framer-motion'
+import { motion, cubicBezier } from 'framer-motion'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../../store/authStore'
@@ -13,10 +13,12 @@ const schema = z.object({
 })
 type LoginForm = z.infer<typeof schema>
 
+const easeCustom = cubicBezier(0.22, 1, 0.36, 1)
+
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 18 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, delay, ease: [0.22, 1, 0.36, 1] },
+  transition: { duration: 0.5, delay, ease: easeCustom },
 })
 
 export default function Login() {
@@ -61,7 +63,7 @@ export default function Login() {
         <motion.div
           initial={{ opacity: 0, scale: 0.85 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.55, ease: easeCustom }}
           style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}
         >
           <svg width="56" height="36" viewBox="0 0 52 34" fill="none">

@@ -493,37 +493,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* KPI pills row */}
-      <div style={{ padding: '14px 20px 0', display: 'flex', gap: 10, position: 'relative', zIndex: 1 }}>
-        {[
-          { label: 'En stock', value: enStock.length, unit: 'autos', dot: '#7A96B8', bar: 'rgba(122,150,184,0.15)' },
-          { label: 'Vendidos', value: vendidosMes.length, unit: 'este mes', dot: '#7AAB8E', bar: 'rgba(122,171,142,0.15)' },
-          { label: 'Reparación', value: enReparacion.length, unit: 'unidades', dot: '#B89870', bar: 'rgba(184,152,112,0.15)' },
-        ].map((k) => (
-          <div key={k.label} style={{
-            flex: 1,
-            background: 'rgba(255,255,255,0.82)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            borderRadius: 22,
-            padding: '14px 14px 13px',
-            boxShadow: '0 2px 16px rgba(20,20,19,0.06)',
-            border: '0.5px solid rgba(20,20,19,0.06)',
-            position: 'relative', overflow: 'hidden',
-          }}>
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0,
-              height: 3, borderRadius: '22px 22px 0 0',
-              background: k.bar,
-            }} />
-            <div style={{ width: 7, height: 7, borderRadius: '50%', background: k.dot, marginBottom: 8 }} />
-            <div style={{ fontSize: 28, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-1px', lineHeight: 1 }}>{k.value}</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 5, lineHeight: 1.2 }}>{k.label}</div>
-            <div style={{ fontSize: 9, color: 'var(--muted)', opacity: 0.7, marginTop: 2 }}>{k.unit}</div>
-          </div>
-        ))}
-      </div>
-
       {/* Inventario breakdown */}
       {total > 0 && (
         <div style={{ padding: '16px 20px 0' }}>
