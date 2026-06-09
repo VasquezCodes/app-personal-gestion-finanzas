@@ -384,7 +384,7 @@ export default function Reportes() {
               boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
             }}>
               <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
@@ -398,7 +398,7 @@ export default function Reportes() {
           ) : marcaSegments.length === 0 ? (
             <div style={{
               height: 200, margin: '0 8px',
-              background: 'rgba(255,255,255,0.7)', borderRadius: 24,
+              background: 'var(--card-glass)', borderRadius: 24,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
             }}>
               <svg width="32" height="32" fill="none" viewBox="0 0 24 24" style={{ opacity: 0.25 }}>
@@ -503,9 +503,10 @@ export default function Reportes() {
           </div>
         )}
 
-        {/* Dos KPIs claros */}
+        {/* Dos KPIs claros — el primero usa surface-deep (siempre oscuro) con
+            texto cream fijo; el segundo usa glass adaptativo con var(--ink). */}
         <div style={{ padding: '14px 16px 0', display: 'flex', gap: 8 }}>
-          <div style={{ flex: 1, background: 'var(--ink)', borderRadius: 18, padding: '14px 16px', boxShadow: '0 4px 14px rgba(20,20,19,0.15)' }}>
+          <div style={{ flex: 1, background: 'var(--surface-deep)', borderRadius: 18, padding: '14px 16px', boxShadow: 'var(--shadow-dark)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'rgba(243,240,238,0.45)', marginBottom: 4 }}>
               {MESES_LARGOS[mesIdx].slice(0, 3)} {anioNav}
             </div>
@@ -513,11 +514,11 @@ export default function Reportes() {
               {auxReady ? gananciaMesDisplay : '—'}
             </div>
           </div>
-          <div style={{ flex: 1, background: 'var(--card-glass)', borderRadius: 18, padding: '14px 16px', boxShadow: '0 1px 8px var(--btn-ghost-bg)' }}>
+          <div style={{ flex: 1, background: 'var(--card-glass)', borderRadius: 18, padding: '14px 16px', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', marginBottom: 4 }}>
               Ganancia {anioNav}
             </div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: '#141413', letterSpacing: '-0.8px', lineHeight: 1 }}>
+            <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px', lineHeight: 1 }}>
               {auxReady ? gananciaAnualDisplay : '—'}
             </div>
           </div>

@@ -198,7 +198,7 @@ export default function EstadoResultados() {
 
           {vendidos.length === 0 ? (
             <div style={{
-              background: '#fff', borderRadius: 20, padding: '32px 20px', textAlign: 'center',
+              background: 'var(--card-glass)', borderRadius: 20, padding: '32px 20px', textAlign: 'center',
               boxShadow: '0 1px 8px var(--btn-ghost-bg)',
             }}>
               <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.3 }}>📋</div>
@@ -214,7 +214,7 @@ export default function EstadoResultados() {
 
                 return (
                   <div key={v.id} style={{
-                    background: '#fff', borderRadius: 20, overflow: 'hidden',
+                    background: 'var(--card-glass)', borderRadius: 20, overflow: 'hidden',
                     boxShadow: '0 1px 8px var(--separator)',
                     border: isExpanded ? '1.5px solid rgba(122,171,142,0.3)' : '1.5px solid transparent',
                     transition: 'border-color .2s',
@@ -254,7 +254,7 @@ export default function EstadoResultados() {
                         </div>
                       </div>
 
-                      <div style={{ color: 'rgba(20,20,19,0.25)', flexShrink: 0 }}>
+                      <div style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}>
                         {isExpanded ? <ChevronUp size={16} strokeWidth={2} /> : <ChevronDown size={16} strokeWidth={2} />}
                       </div>
                     </button>
@@ -352,7 +352,7 @@ export default function EstadoResultados() {
                 const capital = costoVehiculo(v)
                 return (
                   <div key={v.id} style={{
-                    background: '#fff', borderRadius: 16, padding: '12px 16px',
+                    background: 'var(--card-glass)', borderRadius: 16, padding: '12px 16px',
                     display: 'flex', alignItems: 'center', gap: 12,
                     boxShadow: '0 1px 6px var(--btn-ghost-bg)',
                   }}>
