@@ -689,7 +689,7 @@ export default function Reportes() {
                     <div style={{
                       width: 44, height: 44, borderRadius: 14,
                       background: BRAND_LOGOS[v.marca] ? 'var(--bg-card)' : 'var(--btn-ghost-bg)',
-                      border: '1.5px solid rgba(20,20,19,0.08)',
+                      border: '1.5px solid var(--separator)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: BRAND_LOGOS[v.marca] ? 9 : 0,
                     }}>
@@ -705,14 +705,16 @@ export default function Reportes() {
                         </span>
                       )}
                     </div>
+                    {/* Badge ranking: #1 con contraste fuerte (ink/bg invierten);
+                        el resto usa el ghost adaptativo. Borde matchea la card detrás. */}
                     <div style={{
                       position: 'absolute', bottom: -4, right: -4,
                       width: 18, height: 18, borderRadius: 6,
-                      background: i === 0 ? '#141413' : 'rgba(20,20,19,0.15)',
+                      background: i === 0 ? 'var(--ink)' : 'var(--btn-ghost-bg)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 800,
                       color: i === 0 ? 'var(--bg)' : 'var(--ink)',
-                      border: '1.5px solid #fff',
+                      border: '1.5px solid var(--bg-card)',
                     }}>#{i + 1}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
