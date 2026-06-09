@@ -587,7 +587,9 @@ export default function Reportes() {
                           background: 'rgba(255,255,255,0.6)', borderRadius: 10, padding: '6px 10px',
                         }}>
                           <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{a.marca} {a.modelo}</span>
-                          <span style={{ fontSize: 12, fontWeight: 800, color: '#4A7A5A' }}>+{fmtN(a.ganancia)}</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: a.ganancia >= 0 ? '#4A7A5A' : '#A04848' }}>
+                            {a.ganancia >= 0 ? '+' : '−'}{fmtN(Math.abs(a.ganancia))}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -716,7 +718,9 @@ export default function Reportes() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.nombre}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--green)' }}>+{fmtN(v.ganancia)}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: v.ganancia >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                      {v.ganancia >= 0 ? '+' : '−'}{fmtN(Math.abs(v.ganancia))}
+                    </div>
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>ROI {v.roi}%</div>
                   </div>
                 </div>

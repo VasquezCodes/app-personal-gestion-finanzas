@@ -757,7 +757,9 @@ export default function Inventario() {
                             background: c.bg, color: c.text, letterSpacing: 0.2,
                           }}>{estadoLabel}</span>
                           {ganancia != null ? (
-                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)' }}>+{fmtShort(ganancia)}</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: ganancia >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                              {ganancia >= 0 ? '+' : '−'}{fmtShort(Math.abs(ganancia))}
+                            </span>
                           ) : (
                             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
                           )}

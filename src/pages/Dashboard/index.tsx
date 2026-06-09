@@ -444,7 +444,9 @@ export default function Dashboard() {
                       background: 'rgba(255,255,255,0.45)', borderRadius: 10, padding: '6px 10px',
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#141413' }}>{a.marca} {a.modelo}</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: '#4A7A5A' }}>+{fmtShort(a.ganancia)}</span>
+                      <span style={{ fontSize: 12, fontWeight: 800, color: a.ganancia >= 0 ? '#4A7A5A' : '#A04848' }}>
+                        {a.ganancia >= 0 ? '+' : '−'}{fmtShort(Math.abs(a.ganancia))}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -647,7 +649,9 @@ export default function Dashboard() {
                       background: estadoBg, color: colorIcon, letterSpacing: 0.2,
                     }}>{estadoLabel}</span>
                     {ganancia != null ? (
-                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)' }}>+{fmtShort(ganancia)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: ganancia >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                        {ganancia >= 0 ? '+' : '−'}{fmtShort(Math.abs(ganancia))}
+                      </span>
                     ) : (
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
                     )}

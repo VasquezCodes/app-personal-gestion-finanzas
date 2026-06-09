@@ -3,7 +3,10 @@ import { BackHeader } from '../../components/ios/BackHeader'
 import { supabase } from '../../lib/supabase'
 import type { GastoGeneral, CategoriaGasto } from '../../types'
 
-type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro'
+type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro' | 'reparaciones'
+// Solo estas categorías son seleccionables al agregar un gasto manual; las
+// reparaciones se cargan desde el detalle del vehículo.
+type AddableCat = Exclude<CatKey, 'reparaciones'>
 
 interface GastoRow {
   id: string
@@ -11,21 +14,32 @@ interface GastoRow {
   monto: number
   categoria: CatKey
   fecha: string
+  source: 'gasto' | 'reparacion'
+  vehiculo?: string  // "Marca Modelo" para reparaciones
+}
+
+interface RepRow {
+  id: string
+  descripcion: string
+  costo: number
+  fecha: string
+  vehiculos: { marca: string; modelo: string } | null
 }
 
 const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = {
-  alquiler:  { label: 'Alquiler',  color: '#7A96B8', bg: 'rgba(122,150,184,0.12)' },
-  servicios: { label: 'Servicios', color: '#7AAB8E', bg: 'rgba(122,171,142,0.12)' },
-  marketing: { label: 'Marketing', color: '#B89870', bg: 'rgba(184,152,112,0.12)' },
-  personal:  { label: 'Personal',  color: '#A88AB8', bg: 'rgba(168,138,184,0.12)' },
-  otro:      { label: 'Otro',      color: '#9A9590', bg: 'rgba(154,149,144,0.12)' },
+  alquiler:     { label: 'Alquiler',     color: '#7A96B8', bg: 'rgba(122,150,184,0.12)' },
+  servicios:    { label: 'Servicios',    color: '#7AAB8E', bg: 'rgba(122,171,142,0.12)' },
+  marketing:    { label: 'Marketing',    color: '#B89870', bg: 'rgba(184,152,112,0.12)' },
+  personal:     { label: 'Personal',     color: '#A88AB8', bg: 'rgba(168,138,184,0.12)' },
+  otro:         { label: 'Otro',         color: '#9A9590', bg: 'rgba(154,149,144,0.12)' },
+  reparaciones: { label: 'Reparación',   color: '#C07070', bg: 'rgba(192,112,112,0.12)' },
 }
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
 // Las categorías 'impuestos' y 'seguros' existen en la tabla pero no en este historial → caen en 'otro'
-function toDisplayCat(c: CategoriaGasto): CatKey {
+function toDisplayCat(c: CategoriaGasto): AddableCat {
   return (c === 'alquiler' || c === 'servicios' || c === 'marketing' || c === 'personal') ? c : 'otro'
 }
 
@@ -39,20 +53,38 @@ export default function HistorialGastos() {
   useEffect(() => {
     let active = true
     ;(async () => {
-      const { data, error } = await supabase
-        .from('gastos_generales')
-        .select('id, descripcion, monto, categoria, fecha')
-        .order('fecha', { ascending: false })
+      const [gRes, rRes] = await Promise.all([
+        supabase
+          .from('gastos_generales')
+          .select('id, descripcion, monto, categoria, fecha')
+          .order('fecha', { ascending: false }),
+        supabase
+          .from('reparaciones')
+          .select('id, descripcion, costo, fecha, vehiculos(marca, modelo)')
+          .order('fecha', { ascending: false }),
+      ])
       if (!active) return
-      if (!error && data) {
-        setGastos((data as GastoGeneral[]).map((g) => ({
-          id: g.id,
-          descripcion: g.descripcion,
-          monto: g.monto,
-          categoria: toDisplayCat(g.categoria),
-          fecha: g.fecha,
-        })))
-      }
+
+      const gastosRows: GastoRow[] = (gRes.data as GastoGeneral[] | null ?? []).map((g) => ({
+        id: g.id,
+        descripcion: g.descripcion,
+        monto: g.monto,
+        categoria: toDisplayCat(g.categoria),
+        fecha: g.fecha,
+        source: 'gasto',
+      }))
+
+      const repsRows: GastoRow[] = ((rRes.data as unknown as RepRow[] | null) ?? []).map((r) => ({
+        id: r.id,
+        descripcion: r.descripcion || 'Reparación',
+        monto: r.costo,
+        categoria: 'reparaciones',
+        fecha: r.fecha,
+        source: 'reparacion',
+        vehiculo: r.vehiculos ? `${r.vehiculos.marca} ${r.vehiculos.modelo}` : undefined,
+      }))
+
+      setGastos([...gastosRows, ...repsRows].sort((a, b) => b.fecha.localeCompare(a.fecha)))
       setLoading(false)
     })()
     return () => { active = false }
@@ -66,7 +98,11 @@ export default function HistorialGastos() {
   const filtrados = useMemo(() => {
     return gastos
       .filter((g) => anioFiltro === 'todos' || g.fecha.startsWith(anioFiltro))
-      .filter((g) => !busqueda || g.descripcion.toLowerCase().includes(busqueda.toLowerCase()))
+      .filter((g) => {
+        if (!busqueda) return true
+        const q = busqueda.toLowerCase()
+        return g.descripcion.toLowerCase().includes(q) || (g.vehiculo?.toLowerCase().includes(q) ?? false)
+      })
       .sort((a, b) => b.fecha.localeCompare(a.fecha))
   }, [gastos, anioFiltro, busqueda])
 
@@ -88,14 +124,15 @@ export default function HistorialGastos() {
 
   const totalGeneral = filtrados.reduce((s, g) => s + g.monto, 0)
 
-  async function handleDelete(id: string) {
+  async function handleDelete(row: GastoRow) {
+    if (row.source !== 'gasto') return // las reparaciones se borran desde el vehículo
     const prev = gastos
-    setGastos((g) => g.filter((x) => x.id !== id))
-    const { error } = await supabase.from('gastos_generales').delete().eq('id', id)
+    setGastos((g) => g.filter((x) => !(x.id === row.id && x.source === 'gasto')))
+    const { error } = await supabase.from('gastos_generales').delete().eq('id', row.id)
     if (error) setGastos(prev)
   }
 
-  async function handleAdd(form: { descripcion: string; monto: number; categoria: CatKey; fecha: string }) {
+  async function handleAdd(form: { descripcion: string; monto: number; categoria: AddableCat; fecha: string }) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
     const { data, error } = await supabase
@@ -118,6 +155,7 @@ export default function HistorialGastos() {
         monto: row.monto,
         categoria: toDisplayCat(row.categoria),
         fecha: row.fecha,
+        source: 'gasto',
       }, ...g])
       setSheetOpen(false)
     }
@@ -125,8 +163,8 @@ export default function HistorialGastos() {
 
   function handleExport() {
     const rows = [
-      ['ID', 'Descripcion', 'Monto', 'Categoria', 'Fecha'],
-      ...filtrados.map((g) => [g.id, `"${g.descripcion}"`, g.monto, g.categoria, g.fecha]),
+      ['ID', 'Tipo', 'Descripcion', 'Monto', 'Categoria', 'Fecha', 'Vehiculo'],
+      ...filtrados.map((g) => [g.id, g.source, `"${g.descripcion}"`, g.monto, g.categoria, g.fecha, g.vehiculo ?? '']),
     ]
     const csv = rows.map((r) => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -148,7 +186,7 @@ export default function HistorialGastos() {
       </button>
       <button onClick={() => setSheetOpen(true)} style={iconBtnStyle(true)}>
         <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
-          <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M12 5v14M5 12h14" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round"/>
         </svg>
       </button>
     </div>
@@ -200,7 +238,7 @@ export default function HistorialGastos() {
           <input
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por descripción…"
+            placeholder="Buscar por descripción o vehículo…"
             style={{
               width: '100%', height: 42, borderRadius: 14,
               border: '1.5px solid var(--separator)',
@@ -232,8 +270,10 @@ export default function HistorialGastos() {
                   {items.map((g) => {
                     const c = catConfig[g.categoria]
                     const fecha = new Date(g.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
+                    const subtitle = g.vehiculo ? `${fecha} · ${c.label} · ${g.vehiculo}` : `${fecha} · ${c.label}`
+                    const isGasto = g.source === 'gasto'
                     return (
-                      <div key={g.id} style={{
+                      <div key={`${g.source}-${g.id}`} style={{
                         background: 'var(--card-glass)', backdropFilter: 'blur(8px)',
                         WebkitBackdropFilter: 'blur(8px)', borderRadius: 18, padding: '13px 16px',
                         display: 'flex', alignItems: 'center', gap: 13,
@@ -250,23 +290,25 @@ export default function HistorialGastos() {
                           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {g.descripcion}
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{fecha} · {c.label}</div>
+                          <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtitle}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                           <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)' }}>−{fmt(g.monto)}</div>
-                          <button
-                            onClick={() => handleDelete(g.id)}
-                            style={{
-                              width: 30, height: 30, borderRadius: 10, border: 'none', cursor: 'pointer',
-                              background: 'var(--red-bg)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            }}
-                          >
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                                stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
+                          {isGasto && (
+                            <button
+                              onClick={() => handleDelete(g)}
+                              style={{
+                                width: 30, height: 30, borderRadius: 10, border: 'none', cursor: 'pointer',
+                                background: 'var(--red-bg)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}
+                            >
+                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
+                                  stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </div>
                     )
@@ -296,12 +338,14 @@ function iconBtnStyle(dark: boolean): React.CSSProperties {
 
 function AddGastoHistorialSheet({
   onClose, onSaved,
-}: { onClose: () => void; onSaved: (g: { descripcion: string; monto: number; categoria: CatKey; fecha: string }) => void }) {
+}: { onClose: () => void; onSaved: (g: { descripcion: string; monto: number; categoria: AddableCat; fecha: string }) => void }) {
   const [desc, setDesc] = useState('')
   const [monto, setMonto] = useState('')
-  const [cat, setCat] = useState<CatKey>('otro')
+  const [cat, setCat] = useState<AddableCat>('otro')
   const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10))
   const [saving, setSaving] = useState(false)
+
+  const addableCats: AddableCat[] = ['alquiler', 'servicios', 'marketing', 'personal', 'otro']
 
   async function handleSave() {
     if (!desc || !monto || saving) return
@@ -320,14 +364,14 @@ function AddGastoHistorialSheet({
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 60 }} />
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
+        background: 'var(--bg-card)', borderRadius: '28px 28px 0 0',
         zIndex: 70, paddingBottom: 34,
         boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
         animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
       }}>
         <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
         </div>
         <div style={{ padding: '12px 22px 0' }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 20 }}>Nuevo gasto</div>
@@ -336,9 +380,9 @@ function AddGastoHistorialSheet({
               style={inputStyle} />
             <input value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto (USD)" type="number"
               style={inputStyle} />
-            <select value={cat} onChange={(e) => setCat(e.target.value as CatKey)} style={inputStyle}>
-              {(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][]).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
+            <select value={cat} onChange={(e) => setCat(e.target.value as AddableCat)} style={inputStyle}>
+              {addableCats.map((k) => (
+                <option key={k} value={k}>{catConfig[k].label}</option>
               ))}
             </select>
             <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date" style={inputStyle} />

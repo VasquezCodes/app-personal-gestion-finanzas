@@ -280,7 +280,9 @@ export default function HistorialGanancias() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--green)' }}>+{fmt(v.ganancia)}</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: v.ganancia >= 0 ? 'var(--green)' : 'var(--red)' }}>
+                              {v.ganancia >= 0 ? '+' : '−'}{fmt(Math.abs(v.ganancia))}
+                            </div>
                             <div style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right' }}>ROI {v.roi.toFixed(1)}%</div>
                           </div>
                         </div>
