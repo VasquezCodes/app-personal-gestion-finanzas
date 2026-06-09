@@ -67,7 +67,7 @@ export default function Login() {
           style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 16 }}
         >
           <svg width="56" height="36" viewBox="0 0 52 34" fill="none">
-            <path d="M4 30 A22 22 0 0 1 48 30" stroke="rgba(20,20,19,0.12)" strokeWidth="4" strokeLinecap="round"/>
+            <path d="M4 30 A22 22 0 0 1 48 30" stroke="var(--separator)" strokeWidth="4" strokeLinecap="round"/>
             <path d="M4 30 A22 22 0 0 1 38 8" stroke="var(--ink)" strokeWidth="4" strokeLinecap="round"/>
             <line x1="26" y1="30" x2="35" y2="10" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round"/>
             <circle cx="26" cy="30" r="4" fill="var(--ink)"/>
@@ -97,11 +97,11 @@ export default function Login() {
         {...fadeUp(0.2)}
         style={{
           width: '100%', maxWidth: 360,
-          background: '#FFFFFF',
+          background: 'var(--bg-card)',
           borderRadius: 28,
           padding: '28px 24px',
           boxShadow: '0 4px 40px rgba(20,20,19,0.07)',
-          border: '1px solid rgba(20,20,19,0.05)',
+          border: '1px solid var(--separator)',
         }}
       >
         <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
@@ -174,7 +174,7 @@ export default function Login() {
               fontWeight: 600,
               letterSpacing: '-0.02em',
               background: isSubmitting ? 'var(--neutral-700)' : 'var(--ink)',
-              color: '#FFFFFF',
+              color: 'var(--bg)',
               border: 'none',
               cursor: isSubmitting ? 'not-allowed' : 'pointer',
               display: 'flex',
@@ -239,7 +239,7 @@ function InputField({
           background: 'var(--bg)',
           border: error
             ? '1.5px solid var(--red)'
-            : '1.5px solid rgba(20,20,19,0.08)',
+            : '1.5px solid var(--separator)',
         }}
       >
         {children}

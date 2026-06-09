@@ -87,9 +87,9 @@ const PieDistribution = memo(function PieDistribution({ data }: { data: PieEntry
               const d = payload[0].payload as PieEntry
               return (
                 <div style={{
-                  background: '#fff', borderRadius: 14, padding: '10px 14px',
+                  background: 'var(--card-glass)', borderRadius: 14, padding: '10px 14px',
                   boxShadow: '0 4px 20px rgba(20,20,19,0.12)',
-                  border: '0.5px solid rgba(20,20,19,0.06)',
+                  border: '0.5px solid var(--separator)',
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: d.fill }} />
@@ -359,7 +359,7 @@ export default function Reportes() {
     <div style={{ height: '100svh', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: '#F7F5F2',
+        background: 'var(--bg-gradient)',
         paddingBottom: 120,
       }}>
         {/* Header */}
@@ -369,7 +369,7 @@ export default function Reportes() {
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => navigate('/reportes/historial')} style={{
-              width: 38, height: 38, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
+              width: 38, height: 38, borderRadius: 12, background: 'var(--btn-ghost-bg)',
               border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
@@ -392,7 +392,7 @@ export default function Reportes() {
         {/* Pie chart — brand ganancia distribution */}
         <div style={{ padding: '8px 8px 0' }}>
           {!auxReady ? (
-            <div style={{ height: 300, borderRadius: 24, background: 'rgba(20,20,19,0.05)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ height: 300, borderRadius: 24, background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : marcaSegments.length === 0 ? (
             <div style={{
               height: 200, margin: '0 8px',
@@ -418,8 +418,8 @@ export default function Reportes() {
             {([{ id: 'mes', label: 'Mes' }, { id: 'anio', label: 'Año' }] as { id: Periodo; label: string }[]).map((p) => (
               <button key={p.id} onClick={() => startTransition(() => setPeriodo(p.id))} style={{
                 padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: periodo === p.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: periodo === p.id ? '#F3F0EE' : 'var(--ink2)',
+                background: periodo === p.id ? 'var(--ink)' : 'var(--btn-ghost-bg)',
+                color: periodo === p.id ? 'var(--bg)' : 'var(--ink2)',
                 fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
               }}>{p.label}</button>
             ))}
@@ -449,13 +449,13 @@ export default function Reportes() {
           <div style={{ padding: '18px 16px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
             {marcaSegments.map((m) => (
               <div key={m.marca} style={{
-                background: '#fff', borderRadius: 18, padding: '13px 16px',
+                background: 'var(--card-glass)', borderRadius: 18, padding: '13px 16px',
                 display: 'flex', alignItems: 'center', gap: 14,
-                boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
+                boxShadow: '0 1px 8px var(--btn-ghost-bg)',
               }}>
                 <div style={{
                   width: 48, height: 48, borderRadius: 15, flexShrink: 0,
-                  background: BRAND_LOGOS[m.marca] ? '#fff' : m.bg,
+                  background: BRAND_LOGOS[m.marca] ? 'var(--bg-card)' : m.bg,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   padding: BRAND_LOGOS[m.marca] ? 10 : 0,
                   border: BRAND_LOGOS[m.marca] ? `1.5px solid ${m.color}22` : 'none',
@@ -464,7 +464,7 @@ export default function Reportes() {
                     <img
                       src={BRAND_LOGOS[m.marca]}
                       alt={m.marca}
-                      style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.85 }}
+                      style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'var(--logo-filter)', opacity: 0.85 }}
                     />
                   ) : (
                     <span style={{ fontSize: 14, fontWeight: 900, color: m.color, letterSpacing: '-0.3px' }}>
@@ -495,7 +495,7 @@ export default function Reportes() {
               {auxReady ? gananciaMesDisplay : '—'}
             </div>
           </div>
-          <div style={{ flex: 1, background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 1px 8px rgba(20,20,19,0.05)' }}>
+          <div style={{ flex: 1, background: 'var(--card-glass)', borderRadius: 18, padding: '14px 16px', boxShadow: '0 1px 8px var(--btn-ghost-bg)' }}>
             <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', marginBottom: 4 }}>
               Ganancia {anioNav}
             </div>
@@ -507,7 +507,7 @@ export default function Reportes() {
 
         {/* Monthly bar chart */}
         <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px rgba(20,20,19,0.05)' }}>
+          <div style={{ background: 'var(--card-glass)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px var(--btn-ghost-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>Ganancia mensual</div>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--muted)' }}>{year}</div>
@@ -520,7 +520,7 @@ export default function Reportes() {
                 const isMax = m.ganancia === maxGanancia && m.ganancia > 0
                 const isSel = selectedBar === i
                 const showLabel = isSel || (isMax && !isSel && !isFuture)
-                const barColor = isSel ? '#141413' : isNegative ? '#C07070' : isFuture ? 'rgba(20,20,19,0.06)' : isMax ? 'rgba(20,20,19,0.85)' : 'rgba(20,20,19,0.18)'
+                const barColor = isSel ? '#141413' : isNegative ? 'var(--red)' : isFuture ? 'var(--separator)' : isMax ? 'rgba(20,20,19,0.85)' : 'rgba(20,20,19,0.18)'
                 return (
                   <div
                     key={i}
@@ -529,7 +529,7 @@ export default function Reportes() {
                   >
                     <div style={{ height: 18, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
                       {showLabel && (
-                        <div style={{ background: isNegative ? '#C07070' : '#141413', color: '#F3F0EE', fontSize: 8, fontWeight: 700, padding: '2px 4px', borderRadius: 4, whiteSpace: 'nowrap' }}>
+                        <div style={{ background: isNegative ? 'var(--red)' : '#141413', color: '#F3F0EE', fontSize: 8, fontWeight: 700, padding: '2px 4px', borderRadius: 4, whiteSpace: 'nowrap' }}>
                           {fmtN(m.ganancia)}
                         </div>
                       )}
@@ -551,7 +551,7 @@ export default function Reportes() {
               const sel = mesesData[selectedBar]
               return (
                 <div style={{
-                  marginTop: 12, background: 'rgba(20,20,19,0.06)',
+                  marginTop: 12, background: 'var(--separator)',
                   borderRadius: 14, padding: '10px 12px',
                   animation: 'fadeInUp .18s ease',
                 }}>
@@ -658,16 +658,16 @@ export default function Reportes() {
             <div ref={topListRef} style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
               {topVehiculos.map((v, i) => (
                 <div key={i} style={{
-                  background: 'rgba(255,255,255,0.82)', borderRadius: 18, padding: '13px 16px',
+                  background: 'var(--card-glass)', borderRadius: 18, padding: '13px 16px',
                   display: 'flex', alignItems: 'center', gap: 12,
                   boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
-                  border: '0.5px solid rgba(20,20,19,0.06)',
+                  border: '0.5px solid var(--separator)',
                 }}>
                   {/* Logo con badge de ranking */}
                   <div style={{ position: 'relative', flexShrink: 0 }}>
                     <div style={{
                       width: 44, height: 44, borderRadius: 14,
-                      background: BRAND_LOGOS[v.marca] ? '#fff' : 'rgba(20,20,19,0.07)',
+                      background: BRAND_LOGOS[v.marca] ? 'var(--bg-card)' : 'var(--btn-ghost-bg)',
                       border: '1.5px solid rgba(20,20,19,0.08)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       padding: BRAND_LOGOS[v.marca] ? 9 : 0,
@@ -676,7 +676,7 @@ export default function Reportes() {
                         <img
                           src={BRAND_LOGOS[v.marca]}
                           alt={v.marca}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.85 }}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'var(--logo-filter)', opacity: 0.85 }}
                         />
                       ) : (
                         <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>
@@ -690,7 +690,7 @@ export default function Reportes() {
                       background: i === 0 ? '#141413' : 'rgba(20,20,19,0.15)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 800,
-                      color: i === 0 ? '#F3F0EE' : 'var(--ink)',
+                      color: i === 0 ? 'var(--bg)' : 'var(--ink)',
                       border: '1.5px solid #fff',
                     }}>#{i + 1}</div>
                   </div>
@@ -698,7 +698,7 @@ export default function Reportes() {
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{v.nombre}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#7AAB8E' }}>+{fmtN(v.ganancia)}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--green)' }}>+{fmtN(v.ganancia)}</div>
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>ROI {v.roi}%</div>
                   </div>
                 </div>
@@ -711,12 +711,12 @@ export default function Reportes() {
         {/* Proyección del próximo mes */}
         {proyeccionData.proyeccion > 0 && (
           <div style={{ padding: '12px 22px 0' }}>
-            <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px rgba(20,20,19,0.05)' }}>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px var(--btn-ghost-bg)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>Próximo mes (est.)</div>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: proyeccionData.tendencia === 'alza' ? 'rgba(122,171,142,0.14)' : proyeccionData.tendencia === 'baja' ? 'rgba(192,112,112,0.14)' : 'rgba(20,20,19,0.07)',
+                  background: proyeccionData.tendencia === 'alza' ? 'rgba(122,171,142,0.14)' : proyeccionData.tendencia === 'baja' ? 'rgba(192,112,112,0.14)' : 'var(--btn-ghost-bg)',
                   padding: '4px 10px', borderRadius: 999,
                 }}>
                   <span style={{ fontSize: 14 }}>
@@ -724,7 +724,7 @@ export default function Reportes() {
                   </span>
                   <span style={{
                     fontSize: 11, fontWeight: 700,
-                    color: proyeccionData.tendencia === 'alza' ? '#7AAB8E' : proyeccionData.tendencia === 'baja' ? '#C07070' : 'var(--ink2)',
+                    color: proyeccionData.tendencia === 'alza' ? 'var(--green)' : proyeccionData.tendencia === 'baja' ? 'var(--red)' : 'var(--ink2)',
                   }}>
                     {proyeccionData.tendencia === 'alza' ? 'En alza' : proyeccionData.tendencia === 'baja' ? 'En baja' : 'Estable'}
                   </span>
@@ -740,7 +740,7 @@ export default function Reportes() {
                 ].map((col) => (
                   <div key={col.label} style={{
                     flex: 1, textAlign: 'center',
-                    background: col.dim ? 'transparent' : 'rgba(20,20,19,0.05)',
+                    background: col.dim ? 'transparent' : 'var(--btn-ghost-bg)',
                     borderRadius: 14, padding: '10px 6px',
                   }}>
                     <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', marginBottom: 4 }}>{col.label}</div>
@@ -786,7 +786,7 @@ export default function Reportes() {
         {/* Análisis por marca */}
         {marcasData.length > 0 && (
           <div style={{ padding: '12px 22px 0' }}>
-            <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px rgba(20,20,19,0.05)' }}>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 24, padding: '18px 16px', boxShadow: '0 1px 12px var(--btn-ghost-bg)' }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)', marginBottom: 12 }}>Análisis por marca</div>
 
               {/* Metric pills */}
@@ -802,8 +802,8 @@ export default function Reportes() {
                     onClick={() => startTransition(() => setMetricaMarca(m.id))}
                     style={{
                       padding: '5px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                      background: metricaMarca === m.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                      color: metricaMarca === m.id ? '#F3F0EE' : 'var(--ink2)',
+                      background: metricaMarca === m.id ? 'var(--ink)' : 'var(--btn-ghost-bg)',
+                      color: metricaMarca === m.id ? 'var(--bg)' : 'var(--ink2)',
                       fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
                     }}
                   >{m.label}</button>
@@ -837,7 +837,7 @@ export default function Reportes() {
                               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{d.marca}</span>
                               <span style={{ fontSize: 12, fontWeight: 800, color: 'var(--ink)' }}>{fmtMetric(d)}</span>
                             </div>
-                            <div style={{ height: 6, background: 'rgba(20,20,19,0.07)', borderRadius: 999 }}>
+                            <div style={{ height: 6, background: 'var(--btn-ghost-bg)', borderRadius: 999 }}>
                               <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width .3s ease' }} />
                             </div>
                           </div>
@@ -847,12 +847,12 @@ export default function Reportes() {
                     {/* Summary chips */}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {bestRoi && (
-                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink2)', background: 'rgba(20,20,19,0.06)', padding: '4px 12px', borderRadius: 999 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink2)', background: 'var(--separator)', padding: '4px 12px', borderRadius: 999 }}>
                           Mejor ROI: <strong style={{ color: 'var(--ink)' }}>{bestRoi.marca}</strong> {Math.round(bestRoi.roi)}%
                         </div>
                       )}
                       {masRapida && (
-                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink2)', background: 'rgba(20,20,19,0.06)', padding: '4px 12px', borderRadius: 999 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink2)', background: 'var(--separator)', padding: '4px 12px', borderRadius: 999 }}>
                           Más rápida: <strong style={{ color: 'var(--ink)' }}>{masRapida.marca}</strong> {Math.round(masRapida.dias)}d
                         </div>
                       )}

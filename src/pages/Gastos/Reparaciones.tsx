@@ -88,7 +88,7 @@ export default function ReparacionesGastos() {
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: 'var(--bg-gradient)',
         paddingBottom: 40,
       }}>
         <BackHeader title="Reparaciones" />
@@ -127,7 +127,7 @@ export default function ReparacionesGastos() {
             <button key={v} onClick={() => { setVista(v); setExpanded(null) }} style={{
               padding: '8px 20px', borderRadius: 999, border: 'none', cursor: 'pointer',
               background: vista === v ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-              color: vista === v ? '#F3F0EE' : 'var(--ink2)',
+              color: vista === v ? 'var(--bg)' : 'var(--ink2)',
               fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)',
             }}>
               {v === 'tipo' ? 'Por tipo' : 'Por marca'}
@@ -139,7 +139,7 @@ export default function ReparacionesGastos() {
         <div style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {loading ? (
             [1, 2, 3].map((i) => (
-              <div key={i} style={{ height: 64, borderRadius: 18, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div key={i} style={{ height: 64, borderRadius: 18, background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))
           ) : vista === 'tipo' ? (
             porTipo.map((t) => (
@@ -204,7 +204,7 @@ function TipoRow({ label, color, bg, total, pct, breakdown, isOpen, onToggle }: 
   isOpen: boolean; onToggle: () => void
 }) {
   return (
-    <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)', border: '0.5px solid rgba(20,20,19,0.06)' }}>
+    <div style={{ background: 'var(--card-glass)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)', border: '0.5px solid var(--separator)' }}>
       <button onClick={onToggle} style={{
         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
         padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
@@ -214,7 +214,7 @@ function TipoRow({ label, color, bg, total, pct, breakdown, isOpen, onToggle }: 
         </div>
         <div style={{ flex: 1, textAlign: 'left' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{label}</div>
-          <div style={{ height: 4, background: 'rgba(20,20,19,0.06)', borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: 'var(--separator)', borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
             <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999 }} />
           </div>
         </div>
@@ -228,7 +228,7 @@ function TipoRow({ label, color, bg, total, pct, breakdown, isOpen, onToggle }: 
       </button>
       {isOpen && breakdown.length > 0 && (
         <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ height: 1, background: 'rgba(20,20,19,0.06)', marginBottom: 4 }} />
+          <div style={{ height: 1, background: 'var(--separator)', marginBottom: 4 }} />
           {breakdown.map((b) => (
             <div key={b.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 12, color: 'var(--ink2)', fontWeight: 600 }}>{b.label}</span>
@@ -248,17 +248,17 @@ function MarcaRow({ marca, total, pct, breakdown, isOpen, onToggle }: {
 }) {
   const initial = marca.slice(0, 2).toUpperCase()
   return (
-    <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)', border: '0.5px solid rgba(20,20,19,0.06)' }}>
+    <div style={{ background: 'var(--card-glass)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)', border: '0.5px solid var(--separator)' }}>
       <button onClick={onToggle} style={{
         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
         padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12,
       }}>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(20,20,19,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 800, color: 'var(--ink)' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 11, background: 'var(--btn-ghost-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 800, color: 'var(--ink)' }}>
           {initial}
         </div>
         <div style={{ flex: 1, textAlign: 'left' }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>{marca}</div>
-          <div style={{ height: 4, background: 'rgba(20,20,19,0.06)', borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
+          <div style={{ height: 4, background: 'var(--separator)', borderRadius: 999, marginTop: 5, overflow: 'hidden' }}>
             <div style={{ width: `${pct}%`, height: '100%', background: 'var(--ink)', opacity: 0.4, borderRadius: 999 }} />
           </div>
         </div>
@@ -272,7 +272,7 @@ function MarcaRow({ marca, total, pct, breakdown, isOpen, onToggle }: {
       </button>
       {isOpen && breakdown.length > 0 && (
         <div style={{ padding: '0 16px 14px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ height: 1, background: 'rgba(20,20,19,0.06)', marginBottom: 4 }} />
+          <div style={{ height: 1, background: 'var(--separator)', marginBottom: 4 }} />
           {breakdown.map((b) => (
             <div key={b.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

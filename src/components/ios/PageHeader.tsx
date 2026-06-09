@@ -16,10 +16,10 @@ export function PageHeader({ titulo, mostrarVolver = false, accion, subtitulo }:
     <header
       className="sticky top-0 z-40 safe-top"
       style={{
-        background: 'rgba(236,234,229,0.88)',
+        background: 'var(--header-bg)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: '1px solid rgba(0,0,0,0.06)',
+        borderBottom: '1px solid var(--separator)',
         fontFamily: 'var(--font-primary)',
       }}
     >

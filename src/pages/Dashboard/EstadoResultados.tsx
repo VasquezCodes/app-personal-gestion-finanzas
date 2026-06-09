@@ -107,11 +107,11 @@ export default function EstadoResultados() {
   const roiGlobal = totalInvertido > 0 ? Math.round((totalGanancia / totalInvertido) * 100) : 0
 
   return (
-    <div style={{ height: '100svh', background: '#F3F0EE', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100svh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* Header */}
       <div style={{
-        background: '#1E2B38',
+        background: 'var(--surface-deep)',
         padding: 'calc(env(safe-area-inset-top) + 16px) 22px 28px',
         flexShrink: 0,
       }}>
@@ -172,7 +172,7 @@ export default function EstadoResultados() {
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 900, letterSpacing: '-0.5px',
-                  color: k.highlight ? '#7AAB8E' : '#F3F0EE',
+                  color: k.highlight ? 'var(--green)' : '#F3F0EE',
                 }}>
                   {k.value}
                 </div>
@@ -199,7 +199,7 @@ export default function EstadoResultados() {
           {vendidos.length === 0 ? (
             <div style={{
               background: '#fff', borderRadius: 20, padding: '32px 20px', textAlign: 'center',
-              boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
+              boxShadow: '0 1px 8px var(--btn-ghost-bg)',
             }}>
               <div style={{ fontSize: 24, marginBottom: 8, opacity: 0.3 }}>📋</div>
               <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--muted)' }}>Sin ventas en {navLabel}</div>
@@ -215,7 +215,7 @@ export default function EstadoResultados() {
                 return (
                   <div key={v.id} style={{
                     background: '#fff', borderRadius: 20, overflow: 'hidden',
-                    boxShadow: '0 1px 8px rgba(20,20,19,0.06)',
+                    boxShadow: '0 1px 8px var(--separator)',
                     border: isExpanded ? '1.5px solid rgba(122,171,142,0.3)' : '1.5px solid transparent',
                     transition: 'border-color .2s',
                   }}>
@@ -230,7 +230,7 @@ export default function EstadoResultados() {
                       {/* Color indicator */}
                       <div style={{
                         width: 4, height: 38, borderRadius: 2, flexShrink: 0,
-                        background: isPositive ? '#7AAB8E' : '#C07070',
+                        background: isPositive ? 'var(--green)' : 'var(--red)',
                       }} />
 
                       <div style={{ flex: 1, minWidth: 0 }}>
@@ -245,7 +245,7 @@ export default function EstadoResultados() {
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
                         <div style={{
                           fontSize: 16, fontWeight: 900, letterSpacing: '-0.5px',
-                          color: isPositive ? '#7AAB8E' : '#C07070',
+                          color: isPositive ? 'var(--green)' : 'var(--red)',
                         }}>
                           {isPositive ? '+' : '-'}{fmtShort(ganancia)}
                         </div>
@@ -260,11 +260,11 @@ export default function EstadoResultados() {
                     </button>
 
                     {/* Profit bar */}
-                    <div style={{ height: 3, background: 'rgba(20,20,19,0.05)', margin: '0 16px' }}>
+                    <div style={{ height: 3, background: 'var(--btn-ghost-bg)', margin: '0 16px' }}>
                       <div style={{
                         height: '100%', borderRadius: 999,
                         width: `${Math.round(profitRatio * 100)}%`,
-                        background: isPositive ? '#7AAB8E' : '#C07070',
+                        background: isPositive ? 'var(--green)' : 'var(--red)',
                         transition: 'width .4s ease',
                       }} />
                     </div>
@@ -282,26 +282,26 @@ export default function EstadoResultados() {
                           ...(reparaciones > 0 ? [{ label: 'Reparaciones', value: reparaciones, type: 'cost' }] : []),
                           ...(adicionales > 0 ? [{ label: 'Gastos adicionales', value: adicionales, type: 'cost' }] : []),
                         ].map((item, i) => (
-                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '0.5px solid rgba(20,20,19,0.06)' }}>
+                          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: 8, marginBottom: 8, borderBottom: '0.5px solid var(--separator)' }}>
                             <span style={{ fontSize: 13, color: 'var(--ink2)', fontWeight: 500 }}>{item.label}</span>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#C07070' }}>-{fmt(item.value)}</span>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)' }}>-{fmt(item.value)}</span>
                           </div>
                         ))}
 
                         {/* Costo total */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(192,112,112,0.06)', borderRadius: 12, marginBottom: 10 }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Costo total</span>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: '#C07070' }}>-{fmt(costo)}</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--red)' }}>-{fmt(costo)}</span>
                         </div>
 
                         {/* Venta */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', background: 'rgba(122,171,142,0.08)', borderRadius: 12, marginBottom: 12 }}>
                           <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>Precio de venta</span>
-                          <span style={{ fontSize: 14, fontWeight: 900, color: '#7AAB8E' }}>+{fmt(v.precio_venta!)}</span>
+                          <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--green)' }}>+{fmt(v.precio_venta!)}</span>
                         </div>
 
                         {/* Separator */}
-                        <div style={{ height: 1, background: 'rgba(20,20,19,0.08)', marginBottom: 12 }} />
+                        <div style={{ height: 1, background: 'var(--separator)', marginBottom: 12 }} />
 
                         {/* Resultado final */}
                         <div style={{
@@ -310,7 +310,7 @@ export default function EstadoResultados() {
                           background: isPositive ? 'rgba(122,171,142,0.12)' : 'rgba(192,112,112,0.10)',
                         }}>
                           <div>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: isPositive ? '#7AAB8E' : '#C07070', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: isPositive ? 'var(--green)' : 'var(--red)', letterSpacing: 0.5, textTransform: 'uppercase' }}>
                               {isPositive ? 'Ganancia neta' : 'Pérdida neta'}
                             </div>
                             <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
@@ -319,9 +319,9 @@ export default function EstadoResultados() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             {isPositive
-                              ? <TrendingUp size={16} color="#7AAB8E" strokeWidth={2} />
-                              : <TrendingDown size={16} color="#C07070" strokeWidth={2} />}
-                            <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.8px', color: isPositive ? '#7AAB8E' : '#C07070' }}>
+                              ? <TrendingUp size={16} color="var(--green)" strokeWidth={2} />
+                              : <TrendingDown size={16} color="var(--red)" strokeWidth={2} />}
+                            <span style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.8px', color: isPositive ? 'var(--green)' : 'var(--red)' }}>
                               {isPositive ? '+' : '-'}{fmtShort(ganancia)}
                             </span>
                           </div>
@@ -354,7 +354,7 @@ export default function EstadoResultados() {
                   <div key={v.id} style={{
                     background: '#fff', borderRadius: 16, padding: '12px 16px',
                     display: 'flex', alignItems: 'center', gap: 12,
-                    boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
+                    boxShadow: '0 1px 6px var(--btn-ghost-bg)',
                   }}>
                     <div style={{ width: 4, height: 34, borderRadius: 2, background: alerta.color, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -385,7 +385,7 @@ export default function EstadoResultados() {
         {ready && (vendidos.length > 0 || enLote.length > 0) && (
           <div style={{ padding: '20px 16px 0' }}>
             <div style={{
-              background: '#1E2B38', borderRadius: 20, padding: '20px 20px',
+              background: 'var(--surface-deep)', borderRadius: 20, padding: '20px 20px',
               boxShadow: '0 4px 20px rgba(20,20,19,0.18)',
             }}>
               <div style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1.2, color: 'rgba(243,240,238,0.4)', marginBottom: 16 }}>
@@ -394,7 +394,7 @@ export default function EstadoResultados() {
               {[
                 { label: 'Unidades vendidas', value: `${vendidos.length}`, muted: true },
                 { label: 'Capital invertido', value: `-${fmt(totalInvertido)}`, color: 'rgba(243,240,238,0.6)' },
-                { label: 'Total recuperado (ventas)', value: `+${fmt(totalVenta)}`, color: '#7AAB8E' },
+                { label: 'Total recuperado (ventas)', value: `+${fmt(totalVenta)}`, color: 'var(--green)' },
               ].map((row, i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: i < 2 ? 12 : 0, marginBottom: i < 2 ? 12 : 0, borderBottom: i < 2 ? '0.5px solid rgba(255,255,255,0.07)' : 'none' }}>
                   <span style={{ fontSize: 12, color: 'rgba(243,240,238,0.45)', fontWeight: 500 }}>{row.label}</span>
@@ -409,13 +409,13 @@ export default function EstadoResultados() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   {totalGanancia > 0
-                    ? <TrendingUp size={18} color="#7AAB8E" />
+                    ? <TrendingUp size={18} color="var(--green)" />
                     : totalGanancia < 0
-                    ? <TrendingDown size={18} color="#C07070" />
+                    ? <TrendingDown size={18} color="var(--red)" />
                     : <Minus size={18} color="rgba(243,240,238,0.4)" />}
                   <span style={{
                     fontSize: 26, fontWeight: 900, letterSpacing: '-1px',
-                    color: totalGanancia > 0 ? '#7AAB8E' : totalGanancia < 0 ? '#C07070' : '#F3F0EE',
+                    color: totalGanancia > 0 ? 'var(--green)' : totalGanancia < 0 ? 'var(--red)' : '#F3F0EE',
                   }}>
                     {totalGanancia >= 0 ? '+' : '-'}{fmtShort(totalGanancia)}
                   </span>

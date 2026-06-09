@@ -128,7 +128,73 @@
   /* ─── Tab Bar ────────────────────────────────── */
   --ios-tabbar-height: 83px;
   --ios-navbar-height: 44px;
+
+  /* ─── Chrome (tab bar, headers, ghost buttons) ─ */
+  --bar-bg:        #141413;
+  --bar-shadow:    0 8px 40px rgba(20,20,19,0.32);
+  --header-bg:     rgba(236,234,229,0.88);
+  --btn-ghost-bg:  rgba(20,20,19,0.08);
+  --card-glass:    rgba(255,255,255,0.82);
+  --logo-filter:   brightness(0);
 }
+
+/* ============================================
+   Dark theme — warm palette (mantiene ADN brand)
+   ============================================ */
+:root[data-theme="dark"] {
+  /* ─── Surfaces ──────────────────────────────── */
+  --cream:         #F3F0EE; /* se mantiene; pasa a usarse como acento/destacado */
+  --bg:            #1A1816;
+  --bg-gradient:   radial-gradient(ellipse 120% 60% at 60% 0%, #1F1C19 0%, #1A1816 55%, #16140F 100%);
+  --surface:       #242220;
+  --surface-deep:  #0E0C0A;
+  --bg-card:       #242220;
+  --bg-elevated:   #2D2A27;
+  --bg-input:      rgba(255,255,255,0.05);
+
+  /* ─── Text ──────────────────────────────────── */
+  --ink:              #F3F0EE;
+  --ink2:             #C8C2BC;
+  --muted:            #8A847F;
+  --text-primary:     #F3F0EE;
+  --text-secondary:   #8A847F;
+  --text-tertiary:    rgba(243,240,238,0.32);
+
+  /* Status, hero, accents: se preservan — funcionan sobre ambos temas */
+
+  /* ─── Misc ──────────────────────────────────── */
+  --sep:           rgba(243,240,238,0.10);
+  --separator:     rgba(243,240,238,0.10);
+
+  /* ─── Neutrales (invertidos) ────────────────── */
+  --neutral-900: #F3F0EE;
+  --neutral-800: #E8E5E0;
+  --neutral-700: #D5D2CC;
+  --neutral-600: #BBBBBB;
+  --neutral-500: #9A9590;
+  --neutral-400: #7A7A78;
+  --neutral-300: #5A5A58;
+  --neutral-200: #3A3A38;
+  --neutral-100: #1E1E1C;
+  --neutral-50:  #141413;
+
+  /* ─── Sombras (más profundas en dark) ───────── */
+  --shadow-sm:  0 2px 8px rgba(0,0,0,0.32);
+  --shadow-md:  0 4px 20px rgba(0,0,0,0.42);
+  --shadow-lg:  0 8px 40px rgba(0,0,0,0.55);
+  --shadow-dark: 0 4px 24px rgba(0,0,0,0.60);
+
+  /* ─── Chrome overrides ──────────────────────── */
+  --bar-bg:        #2D2A27;
+  --bar-shadow:    0 8px 40px rgba(0,0,0,0.60);
+  --header-bg:     rgba(36,34,32,0.85);
+  --btn-ghost-bg:  rgba(243,240,238,0.10);
+  --card-glass:    rgba(36,34,32,0.82);
+  --logo-filter:   brightness(0) invert(1);
+}
+
+/* Crossfade suave al togglear el tema */
+html, body { transition: background-color 240ms ease, color 240ms ease; }
 
 /* ─── Reset & Base ───────────────────────────────── */
 *, *::before, *::after {

@@ -32,3 +32,6 @@ dist-ssr
 .claude/
 .agents/
 .superpowers/
+
+# Local notes (never push)
+MEJORAS.local.md

@@ -16,6 +16,7 @@ import HistorialGanancias from './pages/Reportes/HistorialGanancias'
 import ReparacionesGastos from './pages/Gastos/Reparaciones'
 import EstadoResultados from './pages/Dashboard/EstadoResultados'
 import { useAuthStore } from './store/authStore'
+import { useThemeStore } from './store/themeStore'
 
 function AppLayout() {
   return (
@@ -50,10 +51,16 @@ function AppLayout() {
 
 export default function App() {
   const init = useAuthStore((s) => s.init)
+  const userId = useAuthStore((s) => s.user?.id ?? null)
+  const bindUser = useThemeStore((s) => s.bindUser)
 
   useEffect(() => {
     init()
   }, [init])
+
+  useEffect(() => {
+    bindUser(userId)
+  }, [userId, bindUser])
 
   return (
     <BrowserRouter>

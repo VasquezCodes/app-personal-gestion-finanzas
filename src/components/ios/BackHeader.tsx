@@ -23,7 +23,7 @@ export function BackHeader({ title, onBack, action }: BackHeaderProps) {
         onClick={handleBack}
         style={{
           width: 40, height: 40, borderRadius: 14, border: 'none', cursor: 'pointer',
-          background: 'rgba(20,20,19,0.08)',
+          background: 'var(--btn-ghost-bg)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexShrink: 0,
         }}

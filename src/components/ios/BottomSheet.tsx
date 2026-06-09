@@ -53,7 +53,7 @@ export function BottomSheet({ open, onClose, titulo, children, altura = 'auto' }
             onDragEnd={(_, info) => { if (info.offset.y > 80) onClose() }}
             className={`fixed bottom-0 inset-x-0 z-100 flex flex-col rounded-t-[28px] overflow-hidden ${alturaClass}`}
             style={{
-              background: 'var(--cream)',
+              background: 'var(--bg-card)',
               borderTop: '1px solid var(--sep)',
             }}
           >

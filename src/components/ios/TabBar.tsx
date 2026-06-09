@@ -71,13 +71,13 @@ export function TabBar() {
     >
       <div
         style={{
-          background: '#141413',
+          background: 'var(--bar-bg)',
           borderRadius: 999,
           padding: '10px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-around',
-          boxShadow: '0 8px 40px rgba(20,20,19,0.32)',
+          boxShadow: 'var(--bar-shadow)',
         }}
       >
         {tabs.map(({ to, label, icon }) => (

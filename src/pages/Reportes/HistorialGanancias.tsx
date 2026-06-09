@@ -1,20 +1,58 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { BackHeader } from '../../components/ios/BackHeader'
-import type { VentaHistorial } from '../../types'
+import { supabase } from '../../lib/supabase'
 
-const LS_KEY = 'motorhub_ganancias_historial'
+interface VentaRow {
+  id: string
+  marca: string
+  modelo: string
+  anio: number
+  ganancia: number
+  roi: number
+  dias: number
+  fecha: string
+}
+
+interface VehiculoVendidoRow {
+  id: string
+  marca: string
+  modelo: string
+  anio: number
+  precio_compra: number
+  precio_venta: number | null
+  gastos_adicionales: number | null
+  fecha_compra: string
+  fecha_venta: string | null
+  reparaciones: { costo: number }[] | null
+}
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
-function loadVentas(): VentaHistorial[] {
-  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') } catch { return [] }
-}
-function saveVentas(data: VentaHistorial[]) {
-  localStorage.setItem(LS_KEY, JSON.stringify(data))
+function diasEntre(desde: string, hasta: string): number {
+  const ms = new Date(hasta).getTime() - new Date(desde).getTime()
+  return Math.max(0, Math.round(ms / 86_400_000))
 }
 
-function Sparkline({ ventas }: { ventas: VentaHistorial[] }) {
+function toVenta(v: VehiculoVendidoRow): VentaRow | null {
+  if (v.precio_venta == null || v.fecha_venta == null) return null
+  const repTotal = (v.reparaciones ?? []).reduce((s, r) => s + (r.costo ?? 0), 0)
+  const costoTotal = v.precio_compra + (v.gastos_adicionales ?? 0) + repTotal
+  const ganancia = v.precio_venta - costoTotal
+  const roi = costoTotal > 0 ? (ganancia / costoTotal) * 100 : 0
+  return {
+    id: v.id,
+    marca: v.marca,
+    modelo: v.modelo,
+    anio: v.anio,
+    ganancia,
+    roi,
+    dias: diasEntre(v.fecha_compra, v.fecha_venta),
+    fecha: v.fecha_venta,
+  }
+}
+
+function Sparkline({ ventas }: { ventas: VentaRow[] }) {
   const now = new Date()
   const meses = Array.from({ length: 6 }).map((_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
@@ -49,10 +87,29 @@ function Sparkline({ ventas }: { ventas: VentaHistorial[] }) {
 }
 
 export default function HistorialGanancias() {
-  const [ventas, setVentas] = useState<VentaHistorial[]>(() => loadVentas())
+  const [ventas, setVentas] = useState<VentaRow[]>([])
+  const [loading, setLoading] = useState(true)
   const [anioFiltro, setAnioFiltro] = useState('todos')
   const [busqueda, setBusqueda] = useState('')
-  const [sheetOpen, setSheetOpen] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const { data, error } = await supabase
+        .from('vehiculos')
+        .select('id, marca, modelo, anio, precio_compra, precio_venta, gastos_adicionales, fecha_compra, fecha_venta, reparaciones(costo)')
+        .eq('estado', 'vendido')
+      if (!active) return
+      if (!error && data) {
+        const rows = (data as VehiculoVendidoRow[])
+          .map(toVenta)
+          .filter((x): x is VentaRow => x !== null)
+        setVentas(rows)
+      }
+      setLoading(false)
+    })()
+    return () => { active = false }
+  }, [])
 
   const anios = useMemo(() => {
     const set = new Set(ventas.map((v) => v.fecha.slice(0, 4)))
@@ -68,7 +125,7 @@ export default function HistorialGanancias() {
   )
 
   const porMes = useMemo(() => {
-    const map = new Map<string, VentaHistorial[]>()
+    const map = new Map<string, VentaRow[]>()
     filtradas.forEach((v) => {
       const key = v.fecha.slice(0, 7)
       if (!map.has(key)) map.set(key, [])
@@ -88,23 +145,10 @@ export default function HistorialGanancias() {
   const totalGeneral = filtradas.reduce((s, v) => s + v.ganancia, 0)
   const roiGlobal = filtradas.length > 0 ? filtradas.reduce((s, v) => s + v.roi, 0) / filtradas.length : 0
 
-  function handleDelete(id: string) {
-    const next = ventas.filter((v) => v.id !== id)
-    setVentas(next)
-    saveVentas(next)
-  }
-
-  function handleAdd(v: VentaHistorial) {
-    const next = [v, ...ventas]
-    setVentas(next)
-    saveVentas(next)
-    setSheetOpen(false)
-  }
-
   function handleExport() {
     const rows = [
       ['ID', 'Marca', 'Modelo', 'Anio', 'Ganancia', 'ROI', 'Dias', 'Fecha'],
-      ...filtradas.map((v) => [v.id, v.marca, v.modelo, v.anio, v.ganancia, v.roi, v.dias, v.fecha]),
+      ...filtradas.map((v) => [v.id, v.marca, v.modelo, v.anio, v.ganancia, v.roi.toFixed(2), v.dias, v.fecha]),
     ]
     const csv = rows.map((r) => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -117,26 +161,19 @@ export default function HistorialGanancias() {
   }
 
   const actionButtons = (
-    <div style={{ display: 'flex', gap: 8 }}>
-      <button onClick={handleExport} style={iconBtn}>
-        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
-            stroke="var(--ink2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
-      <button onClick={() => setSheetOpen(true)} style={{ ...iconBtn, background: 'var(--ink)', boxShadow: '0 4px 14px rgba(20,20,19,0.18)' }}>
-        <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
-          <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </button>
-    </div>
+    <button onClick={handleExport} style={iconBtn}>
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"
+          stroke="var(--ink2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
   )
 
   return (
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: 'var(--bg-gradient)',
         paddingBottom: 40,
       }}>
         <BackHeader title="Historial de Ganancias" action={actionButtons} />
@@ -173,8 +210,8 @@ export default function HistorialGanancias() {
             {['todos', ...anios].map((a) => (
               <button key={a} onClick={() => setAnioFiltro(a)} style={{
                 padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-                background: anioFiltro === a ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: anioFiltro === a ? '#F3F0EE' : 'var(--ink2)',
+                background: anioFiltro === a ? 'var(--ink)' : 'var(--btn-ghost-bg)',
+                color: anioFiltro === a ? 'var(--bg)' : 'var(--ink2)',
                 fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)',
               }}>{a === 'todos' ? 'Todos' : a}</button>
             ))}
@@ -187,8 +224,8 @@ export default function HistorialGanancias() {
             placeholder="Buscar por marca o modelo…"
             style={{
               width: '100%', height: 42, borderRadius: 14,
-              border: '1.5px solid rgba(20,20,19,0.10)',
-              background: 'rgba(255,255,255,0.8)',
+              border: '1.5px solid var(--separator)',
+              background: 'var(--bg-input)',
               padding: '0 14px', fontSize: 14, fontFamily: 'var(--font)',
               color: 'var(--ink)', outline: 'none', boxSizing: 'border-box',
             }}
@@ -197,7 +234,11 @@ export default function HistorialGanancias() {
 
         {/* Grouped list */}
         <div style={{ padding: '12px 22px 0', display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {porMes.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>
+              Cargando…
+            </div>
+          ) : porMes.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>
               {ventas.length === 0 ? 'Sin ventas registradas' : 'Sin resultados'}
             </div>
@@ -208,7 +249,7 @@ export default function HistorialGanancias() {
                   <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--ink)' }}>{label}</div>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <span style={{ fontSize: 11, color: 'var(--muted)' }}>ROI {roiProm.toFixed(1)}%</span>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#7AAB8E' }}>{fmt(totalGanancia)}</span>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)' }}>{fmt(totalGanancia)}</span>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -216,16 +257,16 @@ export default function HistorialGanancias() {
                     const fecha = new Date(v.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
                     return (
                       <div key={v.id} style={{
-                        background: 'rgba(255,255,255,0.82)', borderRadius: 18, padding: '13px 16px',
+                        background: 'var(--card-glass)', borderRadius: 18, padding: '13px 16px',
                         display: 'flex', alignItems: 'center', gap: 13,
                         boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
-                        border: '0.5px solid rgba(20,20,19,0.06)',
+                        border: '0.5px solid var(--separator)',
                       }}>
                         <div style={{
                           width: 40, height: 40, borderRadius: 13, flexShrink: 0,
                           background: 'rgba(122,171,142,0.12)',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          fontSize: 11, fontWeight: 800, color: '#7AAB8E',
+                          fontSize: 11, fontWeight: 800, color: 'var(--green)',
                         }}>
                           {v.marca.slice(0, 2).toUpperCase()}
                         </div>
@@ -239,19 +280,9 @@ export default function HistorialGanancias() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                           <div>
-                            <div style={{ fontSize: 14, fontWeight: 800, color: '#7AAB8E' }}>+{fmt(v.ganancia)}</div>
+                            <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--green)' }}>+{fmt(v.ganancia)}</div>
                             <div style={{ fontSize: 10, color: 'var(--muted)', textAlign: 'right' }}>ROI {v.roi.toFixed(1)}%</div>
                           </div>
-                          <button onClick={() => handleDelete(v.id)} style={{
-                            width: 30, height: 30, borderRadius: 10, border: 'none', cursor: 'pointer',
-                            background: 'rgba(192,112,112,0.10)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}>
-                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                                stroke="#C07070" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                            </svg>
-                          </button>
                         </div>
                       </div>
                     )
@@ -262,94 +293,12 @@ export default function HistorialGanancias() {
           )}
         </div>
       </div>
-
-      {sheetOpen && (
-        <AddVentaSheet onClose={() => setSheetOpen(false)} onSaved={handleAdd} />
-      )}
     </div>
   )
 }
 
 const iconBtn: React.CSSProperties = {
   width: 40, height: 40, borderRadius: 14, border: 'none', cursor: 'pointer',
-  background: 'rgba(20,20,19,0.07)',
+  background: 'var(--btn-ghost-bg)',
   display: 'flex', alignItems: 'center', justifyContent: 'center',
-}
-
-function AddVentaSheet({ onClose, onSaved }: { onClose: () => void; onSaved: (v: VentaHistorial) => void }) {
-  const [marca, setMarca] = useState('')
-  const [modelo, setModelo] = useState('')
-  const [anio, setAnio] = useState(String(new Date().getFullYear()))
-  const [ganancia, setGanancia] = useState('')
-  const [roi, setRoi] = useState('')
-  const [dias, setDias] = useState('')
-  const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10))
-
-  const valid = marca && modelo && ganancia && roi && dias
-
-  function handleSave() {
-    if (!valid) return
-    onSaved({
-      id: crypto.randomUUID(),
-      marca, modelo,
-      anio: parseInt(anio),
-      ganancia: parseFloat(ganancia),
-      roi: parseFloat(roi),
-      dias: parseInt(dias),
-      fecha,
-    })
-  }
-
-  const inp: React.CSSProperties = {
-    width: '100%', height: 46, borderRadius: 14,
-    border: '1.5px solid rgba(20,20,19,0.12)',
-    background: 'rgba(255,255,255,0.8)',
-    padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)',
-    color: 'var(--ink)', outline: 'none', boxSizing: 'border-box',
-  }
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 60 }} />
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
-        zIndex: 70, paddingBottom: 34,
-        boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
-        animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
-      }}>
-        <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
-        </div>
-        <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 20 }}>Registrar venta</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input value={marca} onChange={(e) => setMarca(e.target.value)} placeholder="Marca" style={inp} />
-              <input value={modelo} onChange={(e) => setModelo(e.target.value)} placeholder="Modelo" style={inp} />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input value={anio} onChange={(e) => setAnio(e.target.value)} placeholder="Año" type="number" style={inp} />
-              <input value={dias} onChange={(e) => setDias(e.target.value)} placeholder="Días en lote" type="number" style={inp} />
-            </div>
-            <div style={{ display: 'flex', gap: 10 }}>
-              <input value={ganancia} onChange={(e) => setGanancia(e.target.value)} placeholder="Ganancia ($)" type="number" style={inp} />
-              <input value={roi} onChange={(e) => setRoi(e.target.value)} placeholder="ROI (%)" type="number" style={inp} />
-            </div>
-            <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date" style={inp} />
-            <button onClick={handleSave} disabled={!valid}
-              style={{
-                width: '100%', height: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: !valid ? 'rgba(20,20,19,0.15)' : 'var(--ink)',
-                color: !valid ? 'var(--muted)' : '#F3F0EE',
-                fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
-              }}>
-              Guardar venta
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
-  )
 }

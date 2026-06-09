@@ -87,7 +87,7 @@ function DonutChart({ pct, size = 90, stroke = 11, colors }: {
   })
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
-      <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(20,20,19,0.06)" strokeWidth={stroke} />
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="var(--btn-ghost-bg)" strokeWidth={stroke} />
       {segments.map((s) => (
         <circle key={s.key} cx={cx} cy={cy} r={r} fill="none"
           stroke={s.color} strokeWidth={stroke}
@@ -280,14 +280,14 @@ export default function Dashboard() {
   return (
     <div className="scrollable" style={{
       height: '100svh',
-      background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+      background: 'var(--bg-gradient)',
       paddingBottom: 120,
       position: 'relative',
     }}>
       {/* Ghost watermark */}
       <div style={{
         position: 'absolute', top: 110, left: -10, right: 0,
-        fontSize: 96, fontWeight: 800, color: 'rgba(20,20,19,0.04)',
+        fontSize: 96, fontWeight: 800, color: 'var(--text-tertiary)', opacity: 0.15,
         letterSpacing: '-4px', lineHeight: 1, pointerEvents: 'none',
         userSelect: 'none', zIndex: 0, overflow: 'hidden', whiteSpace: 'nowrap',
         fontFamily: 'var(--font)',
@@ -299,7 +299,7 @@ export default function Dashboard() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <svg width="40" height="26" viewBox="0 0 52 34" fill="none">
-              <path d="M4 30 A22 22 0 0 1 48 30" stroke="rgba(20,20,19,0.12)" strokeWidth="4" strokeLinecap="round"/>
+              <path d="M4 30 A22 22 0 0 1 48 30" stroke="var(--separator)" strokeWidth="4" strokeLinecap="round"/>
               <path d="M4 30 A22 22 0 0 1 38 8" stroke="var(--ink)" strokeWidth="4" strokeLinecap="round"/>
               <line x1="26" y1="30" x2="35" y2="10" stroke="var(--ink)" strokeWidth="2.5" strokeLinecap="round"/>
               <circle cx="26" cy="30" r="4" fill="var(--ink)"/>
@@ -315,7 +315,7 @@ export default function Dashboard() {
               onClick={() => navigate('/inventario')}
               style={{
                 width: 40, height: 40, borderRadius: 14,
-                background: 'rgba(20,20,19,0.07)',
+                background: 'var(--btn-ghost-bg)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: 'none', cursor: 'pointer',
               }}
@@ -332,11 +332,11 @@ export default function Dashboard() {
                 background: 'var(--ink)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 border: 'none', cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(20,20,19,0.18)',
+                boxShadow: 'var(--shadow-md)',
               }}
             >
               <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
-                <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
+                <path d="M12 5v14M5 12h14" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
@@ -354,7 +354,7 @@ export default function Dashboard() {
           </div>
           <div style={{
             fontSize: 11, fontWeight: 600, color: 'var(--muted)',
-            background: 'rgba(20,20,19,0.06)', padding: '5px 12px',
+            background: 'var(--btn-ghost-bg)', padding: '5px 12px',
             borderRadius: 999, letterSpacing: 0.2,
           }}>
             {fechaCorta}
@@ -377,7 +377,7 @@ export default function Dashboard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ fontSize: 52, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-2.5px', lineHeight: 1 }}>
+            <div style={{ fontSize: 52, fontWeight: 900, color: '#141413', letterSpacing: '-2.5px', lineHeight: 1 }}>
               {loading || !auxReady ? '—' : gananciaMesDisplay}
             </div>
             {roiMes > 0 && (
@@ -443,7 +443,7 @@ export default function Dashboard() {
                       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                       background: 'rgba(255,255,255,0.45)', borderRadius: 10, padding: '6px 10px',
                     }}>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--ink)' }}>{a.marca} {a.modelo}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#141413' }}>{a.marca} {a.modelo}</span>
                       <span style={{ fontSize: 12, fontWeight: 800, color: '#4A7A5A' }}>+{fmtShort(a.ganancia)}</span>
                     </div>
                   ))}
@@ -458,13 +458,13 @@ export default function Dashboard() {
       {autosSinVender.length > 0 && (
         <div style={{ padding: '14px 20px 0', position: 'relative', zIndex: 1 }}>
           <div style={{
-            background: 'rgba(255,255,255,0.85)', borderRadius: 24,
-            padding: '16px 16px', boxShadow: '0 2px 16px rgba(20,20,19,0.06)',
-            border: '0.5px solid rgba(20,20,19,0.06)',
+            background: 'var(--card-glass)', borderRadius: 24,
+            padding: '16px 16px', boxShadow: 'var(--shadow-sm)',
+            border: '0.5px solid var(--separator)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--ink)' }}>Autos en lote</div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#C07070', background: 'rgba(192,112,112,0.10)', padding: '3px 10px', borderRadius: 999 }}>
+              <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--red)', background: 'var(--red-bg)', padding: '3px 10px', borderRadius: 999 }}>
                 Requieren atención
               </div>
             </div>
@@ -482,7 +482,7 @@ export default function Dashboard() {
                       background: alerta.bg,
                     }}
                   >
-                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#141413' }}>
                       {v.marca} {v.modelo} {v.anio}
                     </span>
                     <span style={{
@@ -505,16 +505,16 @@ export default function Dashboard() {
       {total > 0 && (
         <div style={{ padding: '16px 20px 0' }}>
           <div style={{
-            background: '#fff', borderRadius: 'var(--r-card)',
+            background: 'var(--card-glass)', borderRadius: 'var(--r-card)',
             padding: '18px 18px 16px',
-            boxShadow: '0 2px 20px rgba(20,20,19,0.06)',
+            boxShadow: 'var(--shadow-sm)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--ink)' }}>Inventario</div>
                 <div style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500, marginTop: 1 }}>Distribución por estado</div>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: '#7A96B8', background: 'rgba(122,150,184,0.1)', padding: '4px 10px', borderRadius: 999 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--blue)', background: 'var(--blue-bg)', padding: '4px 10px', borderRadius: 999 }}>
                 {total} total
               </span>
             </div>
@@ -529,16 +529,16 @@ export default function Dashboard() {
               </div>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {[
-                  { label: 'En stock', pct: inventarioPct.stock, color: '#7A96B8' },
-                  { label: 'Vendidos', pct: inventarioPct.vendido, color: '#7AAB8E' },
-                  { label: 'Reparación', pct: inventarioPct.reparacion, color: '#B89870' },
+                  { label: 'En stock', pct: inventarioPct.stock, color: 'var(--s-stock)' },
+                  { label: 'Vendidos', pct: inventarioPct.vendido, color: 'var(--s-vendido)' },
+                  { label: 'Reparación', pct: inventarioPct.reparacion, color: 'var(--s-rep)' },
                 ].map((item) => (
                   <div key={item.label}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                       <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--ink2)' }}>{item.label}</span>
                       <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--ink)' }}>{item.pct}%</span>
                     </div>
-                    <div style={{ height: 5, background: 'rgba(20,20,19,0.07)', borderRadius: 999, overflow: 'hidden' }}>
+                    <div style={{ height: 5, background: 'var(--btn-ghost-bg)', borderRadius: 999, overflow: 'hidden' }}>
                       <div style={{ width: `${item.pct}%`, height: '100%', background: item.color, borderRadius: 999 }} />
                     </div>
                   </div>
@@ -554,9 +554,9 @@ export default function Dashboard() {
         <button
           onClick={() => navigate('/dashboard/resumen')}
           style={{
-            width: '100%', background: '#1E2B38', borderRadius: 'var(--r-card)',
+            width: '100%', background: 'var(--surface-deep)', borderRadius: 'var(--r-card)',
             padding: '18px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-            boxShadow: '0 4px 24px rgba(20,20,19,0.14)',
+            boxShadow: 'var(--shadow-dark)',
             border: '0.5px solid rgba(255,255,255,0.06)',
             cursor: 'pointer', textAlign: 'left',
           }}>
@@ -605,17 +605,17 @@ export default function Dashboard() {
                   key={v.id}
                   onClick={() => navigate(`/vehiculo/${v.id}`)}
                   style={{
-                    background: '#fff', borderRadius: 20,
+                    background: 'var(--card-glass)', borderRadius: 20,
                     padding: '14px 16px',
                     display: 'flex', alignItems: 'center', gap: 14,
-                    boxShadow: '0 1px 12px rgba(20,20,19,0.05)',
+                    boxShadow: 'var(--shadow-sm)',
                     border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
                   }}
                 >
                   <div style={{
                     width: 54, height: 44, borderRadius: 14, flexShrink: 0,
-                    background: '#fff',
-                    boxShadow: '0 1px 6px rgba(20,20,19,0.10)',
+                    background: 'var(--bg-card)',
+                    boxShadow: 'var(--shadow-sm)',
                     border: `1.5px solid ${colorIcon}22`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '8px 10px',
@@ -624,7 +624,7 @@ export default function Dashboard() {
                       <img
                         src={BRAND_LOGOS[v.marca]}
                         alt={v.marca}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.88 }}
+                        style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'var(--logo-filter)', opacity: 0.88 }}
                       />
                     ) : (
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -647,7 +647,7 @@ export default function Dashboard() {
                       background: estadoBg, color: colorIcon, letterSpacing: 0.2,
                     }}>{estadoLabel}</span>
                     {ganancia != null ? (
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#7AAB8E' }}>+{fmtShort(ganancia)}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)' }}>+{fmtShort(ganancia)}</span>
                     ) : (
                       <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
                     )}
@@ -663,7 +663,7 @@ export default function Dashboard() {
       {!loading && vehiculos.length === 0 && (
         <div style={{ padding: '40px 20px', textAlign: 'center' }}>
           <div style={{
-            width: 80, height: 80, borderRadius: '50%', background: '#141413',
+            width: 80, height: 80, borderRadius: '50%', background: 'var(--surface-deep)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 16px',
           }}>
@@ -680,7 +680,7 @@ export default function Dashboard() {
             onClick={() => navigate('/inventario')}
             style={{
               padding: '12px 28px', borderRadius: 999, border: 'none', cursor: 'pointer',
-              background: 'var(--ink)', color: '#F3F0EE',
+              background: 'var(--ink)', color: 'var(--bg)',
               fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
             }}
           >

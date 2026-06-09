@@ -21,11 +21,11 @@ export function AuthGuard({ children }: AuthGuardProps) {
     return (
       <div
         className="min-h-svh flex items-center justify-center"
-        style={{ background: '#F3F0EE' }}
+        style={{ background: 'var(--bg)' }}
       >
         <div
           className="w-12 h-12 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: '#141413', borderTopColor: 'transparent' }}
+          style={{ borderColor: 'var(--ink)', borderTopColor: 'transparent' }}
         />
       </div>
     )

@@ -1,62 +1,85 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Smartphone, Sun, Moon } from 'lucide-react'
 import { useAuthStore } from '../../store/authStore'
+import { useThemeStore, type ThemeMode } from '../../store/themeStore'
 import { seedMockData, clearMockData } from '../../lib/seedData'
-
-function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <div onClick={() => onChange(!value)} style={{
-      width: 44, height: 26, borderRadius: 999, cursor: 'pointer',
-      background: value ? 'var(--ink)' : 'rgba(20,20,19,0.15)',
-      position: 'relative', transition: 'background .2s', flexShrink: 0,
-    }}>
-      <div style={{
-        position: 'absolute', top: 3, left: value ? 21 : 3,
-        width: 20, height: 20, borderRadius: '50%', background: '#fff',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-        transition: 'left .2s',
-      }} />
-    </div>
-  )
-}
 
 interface RowProps {
   icon: React.ReactNode
   label: string
   value?: string
-  toggle?: boolean
-  onToggle?: (v: boolean) => void
   chevron?: boolean
   danger?: boolean
   onClick?: () => void
 }
 
-function Row({ icon, label, value, toggle, onToggle, chevron, danger, onClick }: RowProps) {
+function Row({ icon, label, value, chevron, danger, onClick }: RowProps) {
   return (
     <div
       onClick={onClick}
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
         padding: '13px 16px',
-        borderBottom: '0.5px solid rgba(20,20,19,0.06)',
+        borderBottom: '0.5px solid var(--separator)',
         cursor: onClick ? 'pointer' : 'default',
       }}
     >
       <div style={{
         width: 34, height: 34, borderRadius: 10, flexShrink: 0,
-        background: danger ? 'rgba(192,112,112,0.12)' : 'rgba(20,20,19,0.07)',
+        background: danger ? 'var(--red-bg)' : 'var(--btn-ghost-bg)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>{icon}</div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 14, fontWeight: 600, color: danger ? '#C07070' : 'var(--ink)' }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 600, color: danger ? 'var(--red)' : 'var(--ink)' }}>{label}</div>
         {value && <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{value}</div>}
       </div>
-      {toggle !== undefined && onToggle && <Toggle value={toggle} onChange={onToggle} />}
       {chevron && (
         <svg width="8" height="14" viewBox="0 0 8 14" fill="none">
-          <path d="M1 1l6 6-6 6" stroke="rgba(20,20,19,0.3)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M1 1l6 6-6 6" stroke="var(--text-tertiary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
         </svg>
       )}
+    </div>
+  )
+}
+
+function ThemeSegment() {
+  const mode = useThemeStore((s) => s.mode)
+  const setMode = useThemeStore((s) => s.setMode)
+
+  const opts: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [
+    { value: 'auto',  label: 'Auto',   icon: <Smartphone size={14} strokeWidth={2} /> },
+    { value: 'light', label: 'Claro',  icon: <Sun size={14} strokeWidth={2} /> },
+    { value: 'dark',  label: 'Oscuro', icon: <Moon size={14} strokeWidth={2} /> },
+  ]
+
+  return (
+    <div style={{ padding: '12px 14px' }}>
+      <div style={{
+        display: 'flex', gap: 4, padding: 4, borderRadius: 14,
+        background: 'var(--btn-ghost-bg)',
+      }}>
+        {opts.map((opt) => {
+          const active = mode === opt.value
+          return (
+            <button
+              key={opt.value}
+              onClick={() => setMode(opt.value)}
+              style={{
+                flex: 1, height: 36, borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: active ? 'var(--ink)' : 'transparent',
+                color: active ? 'var(--bg)' : 'var(--ink2)',
+                fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'background .2s, color .2s',
+              }}
+            >
+              {opt.icon}
+              {opt.label}
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -64,8 +87,6 @@ function Row({ icon, label, value, toggle, onToggle, chevron, danger, onClick }:
 export default function Configuracion() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
-  const [notif, setNotif] = useState(true)
-  const [sync, setSync] = useState(true)
   const [seeding, setSeeding] = useState<'idle' | 'loading' | 'ok' | 'err'>('idle')
   const [clearing, setClearing] = useState<'idle' | 'loading' | 'ok' | 'err'>('idle')
 
@@ -97,7 +118,7 @@ export default function Configuracion() {
     <div style={{ height: '100svh', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: 'var(--bg-gradient)',
         paddingBottom: 120,
       }}>
         {/* Header */}
@@ -106,12 +127,12 @@ export default function Configuracion() {
           <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-1px', fontFamily: 'var(--font)' }}>Perfil</div>
         </div>
 
-        {/* Avatar card */}
+        {/* Avatar card — siempre superficie profunda para mantener contraste en ambos temas */}
         <div style={{ padding: '16px 22px 0' }}>
           <div style={{
-            background: 'var(--ink)', borderRadius: 28, padding: '20px 20px',
+            background: 'var(--surface-deep)', borderRadius: 28, padding: '20px 20px',
             display: 'flex', alignItems: 'center', gap: 16,
-            boxShadow: '0 4px 24px rgba(20,20,19,0.15)',
+            boxShadow: 'var(--shadow-dark)',
             position: 'relative', overflow: 'hidden',
           }}>
             <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
@@ -130,8 +151,8 @@ export default function Configuracion() {
                 marginTop: 8, display: 'inline-flex', alignItems: 'center', gap: 5,
                 background: 'rgba(122,171,142,0.25)', borderRadius: 999, padding: '3px 10px',
               }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#7AAB8E' }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#7AAB8E' }}>Activo</span>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green)' }} />
+                <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)' }}>Activo</span>
               </div>
             </div>
           </div>
@@ -140,37 +161,21 @@ export default function Configuracion() {
         {/* Settings sections */}
         <div style={{ padding: '14px 22px 0', display: 'flex', flexDirection: 'column', gap: 12 }}>
 
-          {/* Preferencias */}
+          {/* Apariencia */}
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Preferencias</div>
-            <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-                label="Notificaciones" toggle={notif} onToggle={setNotif}
-              />
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" stroke="var(--ink2)" strokeWidth="1.8"/><path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-                label="Modo claro" value="Sistema"
-              />
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Apariencia</div>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 22, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
+              <ThemeSegment />
             </div>
           </div>
 
           {/* Datos */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Datos</div>
-            <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                label="Sync automático" toggle={sync} onToggle={setSync}
-              />
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
-                label="Exportar datos" value="CSV / Excel" chevron
-                onClick={() => navigate('/reportes')}
-              />
+            <div style={{ background: 'var(--card-glass)', borderRadius: 22, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
               <Row
                 icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3" stroke="var(--ink2)" strokeWidth="1.8"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" stroke="var(--ink2)" strokeWidth="1.8"/></svg>}
-                label="Base de datos" value="Supabase · Conectado" chevron
+                label="Base de datos" value="Supabase · Conectado"
               />
             </div>
           </div>
@@ -178,22 +183,22 @@ export default function Configuracion() {
           {/* Datos de prueba */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Datos de prueba</div>
-            <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 22, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
               <button onClick={handleSeed} disabled={seeding === 'loading'} style={{
                 width: '100%', padding: '14px 18px', background: 'none', border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 cursor: seeding === 'loading' ? 'default' : 'pointer',
-                borderBottom: '0.5px solid rgba(20,20,19,0.07)',
+                borderBottom: '0.5px solid var(--separator)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(122,171,142,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'var(--green-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                      <path d="M12 5v14M5 12h14" stroke="#7AAB8E" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M12 5v14M5 12h14" stroke="var(--green)" strokeWidth="2" strokeLinecap="round"/>
                     </svg>
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink)' }}>Cargar datos de prueba</span>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: seeding === 'ok' ? '#7AAB8E' : seeding === 'err' ? '#C07070' : 'var(--muted)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: seeding === 'ok' ? 'var(--green)' : seeding === 'err' ? 'var(--red)' : 'var(--muted)' }}>
                   {seeding === 'loading' ? 'Cargando…' : seeding === 'ok' ? '✓ Listo' : seeding === 'err' ? 'Error' : 'Ene–Abr 2026'}
                 </span>
               </button>
@@ -203,14 +208,14 @@ export default function Configuracion() {
                 cursor: clearing === 'loading' ? 'default' : 'pointer',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(192,112,112,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 30, height: 30, borderRadius: 10, background: 'var(--red-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#C07070" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: '#C07070' }}>Eliminar datos de prueba</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--red)' }}>Eliminar datos de prueba</span>
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: clearing === 'ok' ? '#7AAB8E' : clearing === 'err' ? '#C07070' : 'var(--muted)' }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: clearing === 'ok' ? 'var(--green)' : clearing === 'err' ? 'var(--red)' : 'var(--muted)' }}>
                   {clearing === 'loading' ? 'Eliminando…' : clearing === 'ok' ? '✓ Listo' : clearing === 'err' ? 'Error' : 'mock-*'}
                 </span>
               </button>
@@ -220,17 +225,9 @@ export default function Configuracion() {
           {/* Cuenta */}
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>Cuenta</div>
-            <div style={{ background: 'rgba(255,255,255,0.82)', borderRadius: 22, overflow: 'hidden', boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 22, overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
               <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="var(--ink2)" strokeWidth="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-                label="Editar perfil" chevron
-              />
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" stroke="var(--ink2)" strokeWidth="1.8"/><path d="M7 11V7a5 5 0 0110 0v4" stroke="var(--ink2)" strokeWidth="1.8" strokeLinecap="round"/></svg>}
-                label="Cambiar contraseña" chevron
-              />
-              <Row
-                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="#C07070" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                icon={<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                 label="Cerrar sesión" danger onClick={handleSignOut}
               />
             </div>

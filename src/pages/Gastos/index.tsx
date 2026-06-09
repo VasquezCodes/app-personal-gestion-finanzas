@@ -160,7 +160,7 @@ export default function Gastos() {
     ...(repTotalVista > 0 ? [{
       key: 'reparaciones',
       label: 'Reparaciones',
-      color: '#C07070',
+      color: 'var(--red)',
       bg: 'rgba(192,112,112,0.12)',
       total: repTotalVista,
       pct: grandTotal > 0 ? Math.round(repTotalVista / grandTotal * 100) : 0,
@@ -174,7 +174,7 @@ export default function Gastos() {
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: '#F7F5F2',
+        background: 'var(--bg-gradient)',
         paddingBottom: 120,
       }}>
         {/* Header */}
@@ -185,7 +185,7 @@ export default function Gastos() {
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => navigate('/gastos/historial')} style={{
-                width: 36, height: 36, borderRadius: 12, background: 'rgba(20,20,19,0.07)',
+                width: 36, height: 36, borderRadius: 12, background: 'var(--btn-ghost-bg)',
                 border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <Clock size={15} color="var(--ink2)" strokeWidth={1.8} />
@@ -195,7 +195,7 @@ export default function Gastos() {
                 border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                 boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
               }}>
-                <Plus size={15} color="#F3F0EE" strokeWidth={2} />
+                <Plus size={15} color="var(--bg)" strokeWidth={2} />
               </button>
             </div>
           </div>
@@ -205,9 +205,9 @@ export default function Gastos() {
         {/* Radial chart */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
           {loading ? (
-            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.06)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
           ) : catTotals.length === 0 ? (
-            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'rgba(20,20,19,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 260, height: 260, borderRadius: '50%', background: 'var(--btn-ghost-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>Sin gastos</span>
             </div>
           ) : (
@@ -226,7 +226,7 @@ export default function Gastos() {
               <button key={v.id} onClick={() => setVista(v.id)} style={{
                 padding: '8px 22px', borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: vista === v.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: vista === v.id ? '#F3F0EE' : 'var(--ink2)',
+                color: vista === v.id ? 'var(--bg)' : 'var(--ink2)',
                 fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', transition: 'all .15s',
               }}>{v.label}</button>
             ))}
@@ -250,7 +250,7 @@ export default function Gastos() {
         <div style={{ padding: '18px 16px 0', display: 'flex', flexDirection: 'column', gap: 9 }}>
           {loading ? (
             [1, 2, 3].map((i) => (
-              <div key={i} style={{ height: 70, borderRadius: 18, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+              <div key={i} style={{ height: 70, borderRadius: 18, background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
             ))
           ) : catTotals.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--muted)', fontSize: 14 }}>
@@ -262,7 +262,7 @@ export default function Gastos() {
                 key={c.key}
                 onClick={() => setSelectedCat(c.key)}
                 style={{
-                  width: '100%', background: '#fff', borderRadius: 18, padding: '13px 16px',
+                  width: '100%', background: 'var(--card-glass)', borderRadius: 18, padding: '13px 16px',
                   display: 'flex', alignItems: 'center', gap: 14,
                   boxShadow: '0 1px 8px rgba(20,20,19,0.05)',
                   border: 'none', cursor: 'pointer', textAlign: 'left',
@@ -281,7 +281,7 @@ export default function Gastos() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--ink)' }}>{c.label}</div>
-                  <div style={{ fontSize: 12, color: '#C07070', marginTop: 2 }}>−{fmtUSD(c.total)}</div>
+                  <div style={{ fontSize: 12, color: 'var(--red)', marginTop: 2 }}>−{fmtUSD(c.total)}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
                   <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{c.pct}%</span>
@@ -338,7 +338,7 @@ export default function Gastos() {
             {/* Sheet */}
             <div style={{
               position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 90,
-              background: '#F7F5F2', borderRadius: '28px 28px 0 0',
+              background: 'var(--bg-gradient)', borderRadius: '28px 28px 0 0',
               maxHeight: '75vh', display: 'flex', flexDirection: 'column',
               boxShadow: '0 -8px 40px rgba(20,20,19,0.2)',
               animation: 'slideUp .32s cubic-bezier(.2,.8,.3,1)',
@@ -347,7 +347,7 @@ export default function Gastos() {
 
               {/* Drag handle */}
               <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 8 }}>
-                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
               </div>
 
               {/* Colored header */}
@@ -389,7 +389,7 @@ export default function Gastos() {
                 ) : isRep ? (
                   (items as RepDetalle[]).map((r) => (
                     <div key={r.id} style={{
-                      background: '#fff', borderRadius: 16, padding: '12px 16px',
+                      background: 'var(--card-glass)', borderRadius: 16, padding: '12px 16px',
                       display: 'flex', alignItems: 'center', gap: 12,
                       boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
                     }}>
@@ -415,7 +415,7 @@ export default function Gastos() {
                 ) : (
                   (items as GastoGeneral[]).map((g) => (
                     <button key={g.id} onClick={() => setEditingGasto(g)} style={{
-                      width: '100%', background: '#fff', borderRadius: 16, padding: '12px 16px',
+                      width: '100%', background: 'var(--card-glass)', borderRadius: 16, padding: '12px 16px',
                       display: 'flex', alignItems: 'center', gap: 12,
                       boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
                       border: 'none', cursor: 'pointer', textAlign: 'left',
@@ -482,39 +482,39 @@ function EditGastoSheet({ gasto, onClose, onSaved, onDeleted }: {
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 100 }} />
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
+        background: 'var(--bg-card)', borderRadius: '28px 28px 0 0',
         zIndex: 110, paddingBottom: 34,
         boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
         animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
       }}>
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
         </div>
         <div style={{ padding: '12px 22px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
             <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px' }}>Editar gasto</div>
-            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(20,20,19,0.08)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--btn-ghost-bg)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <X size={15} color="var(--ink)" strokeWidth={2} />
             </button>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Descripción"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <input value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto (USD)" type="number"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <select value={cat} onChange={(e) => setCat(e.target.value as CatKey)}
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
               {(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][]).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
               ))}
             </select>
             <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <button onClick={handleSave} disabled={saving || !desc || !monto}
               style={{
                 width: '100%', height: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: saving || !desc || !monto ? 'rgba(20,20,19,0.15)' : 'var(--ink)',
-                color: saving || !desc || !monto ? 'var(--muted)' : '#F3F0EE',
+                color: saving || !desc || !monto ? 'var(--muted)' : 'var(--bg)',
                 fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
               }}>
               {saving ? 'Guardando…' : 'Guardar cambios'}
@@ -562,35 +562,35 @@ function AddGastoSheet({ onClose, onSaved }: { onClose: () => void; onSaved: (g:
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 60 }} />
       <div style={{
         position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
+        background: 'var(--bg-card)', borderRadius: '28px 28px 0 0',
         zIndex: 70, paddingBottom: 34,
         boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
         animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
       }}>
         <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
         <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
         </div>
         <div style={{ padding: '12px 22px 0' }}>
           <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px', marginBottom: 20 }}>Nuevo gasto</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Descripción"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <input value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto (USD)" type="number"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <select value={cat} onChange={(e) => setCat(e.target.value as CatKey)}
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
               {(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][]).map(([k, v]) => (
                 <option key={k} value={k}>{v.label}</option>
               ))}
             </select>
             <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
+              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
             <button onClick={handleSave} disabled={saving || !desc || !monto}
               style={{
                 width: '100%', height: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
                 background: saving || !desc || !monto ? 'rgba(20,20,19,0.15)' : 'var(--ink)',
-                color: saving || !desc || !monto ? 'var(--muted)' : '#F3F0EE',
+                color: saving || !desc || !monto ? 'var(--muted)' : 'var(--bg)',
                 fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
               }}>
               {saving ? 'Guardando…' : 'Guardar gasto'}

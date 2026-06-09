@@ -55,7 +55,7 @@ function Field({
 }
 
 const inputClass = "w-full text-[16px] outline-none bg-transparent"
-const inputStyle = { color: '#141413' }
+const inputStyle = { color: 'var(--ink)' }
 
 // ---- Brand data (exported for use in list cards) ----
 export const BRAND_LOGOS: Record<string, string> = {
@@ -115,8 +115,8 @@ function BrandPicker({ value, onChange, error }: { value: string; onChange: (v: 
               whileTap={{ scale: 0.95 }}
               style={{
                 padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: sel ? '#141413' : 'rgba(20,20,19,0.07)',
-                color: sel ? '#F3F0EE' : '#141413',
+                background: sel ? 'var(--ink)' : 'var(--btn-ghost-bg)',
+                color: sel ? 'var(--bg)' : 'var(--ink)',
                 fontSize: 13, fontWeight: sel ? 700 : 500,
                 fontFamily: 'var(--font)',
                 transition: 'background .12s, color .12s',
@@ -133,9 +133,9 @@ function BrandPicker({ value, onChange, error }: { value: string; onChange: (v: 
           whileTap={{ scale: 0.95 }}
           style={{
             padding: '7px 14px', borderRadius: 999, cursor: 'pointer',
-            border: showCustom ? '1.5px solid #141413' : '1.5px dashed rgba(20,20,19,0.25)',
+            border: showCustom ? '1.5px solid var(--ink)' : '1.5px dashed var(--separator)',
             background: 'transparent',
-            color: showCustom ? '#141413' : 'rgba(20,20,19,0.4)',
+            color: showCustom ? 'var(--ink)' : 'var(--muted)',
             fontSize: 13, fontWeight: 600,
             fontFamily: 'var(--font)',
             transition: 'all .12s',
@@ -153,10 +153,10 @@ function BrandPicker({ value, onChange, error }: { value: string; onChange: (v: 
           placeholder="Escribí la marca..."
           style={{
             marginTop: 10, width: '100%', height: 42, borderRadius: 12,
-            border: '1.5px solid rgba(20,20,19,0.18)',
-            background: 'rgba(255,255,255,0.9)',
+            border: '1.5px solid var(--separator)',
+            background: 'var(--bg-input)',
             padding: '0 14px', fontSize: 15, fontFamily: 'var(--font)',
-            color: '#141413', outline: 'none',
+            color: 'var(--ink)', outline: 'none',
           }}
         />
       )}
@@ -255,7 +255,7 @@ function TabManual({ onSuccess }: { onSuccess: () => void }) {
         disabled={isSubmitting}
         whileTap={{ scale: 0.97 }}
         className="w-full rounded-[20px] py-4 text-[17px] font-semibold flex items-center justify-center gap-2 mt-1 disabled:opacity-60"
-        style={{ background: '#141413', color: '#F3F0EE' }}
+        style={{ background: 'var(--ink)', color: 'var(--bg)' }}
       >
         {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : 'Guardar Vehículo'}
       </motion.button>
@@ -312,7 +312,7 @@ function TabExcel({ onSuccess }: { onSuccess: () => void }) {
         style={{ borderColor: 'rgba(60,60,67,0.2)', background: '#FFFFFF' }}
       >
         <FileSpreadsheet size={36} style={{ color: '#696969' }} strokeWidth={1.5} />
-        <span className="text-[15px] font-medium" style={{ color: '#141413' }}>
+        <span className="text-[15px] font-medium" style={{ color: 'var(--ink)' }}>
           Seleccionar archivo
         </span>
         <span className="text-[13px]" style={{ color: '#696969' }}>
@@ -356,10 +356,10 @@ function TabExcel({ onSuccess }: { onSuccess: () => void }) {
                 className="px-4 py-3 border-b last:border-b-0 flex items-center justify-between"
                 style={{ borderColor: 'rgba(60,60,67,0.1)' }}
               >
-                <span className="text-[14px]" style={{ color: '#141413' }}>
+                <span className="text-[14px]" style={{ color: 'var(--ink)' }}>
                   {v.marca} {v.modelo} {v.anio}
                 </span>
-                <span className="text-[14px] font-semibold" style={{ color: '#141413' }}>
+                <span className="text-[14px] font-semibold" style={{ color: 'var(--ink)' }}>
                   {formatearMoneda(v.precio_compra)}
                 </span>
               </div>
@@ -376,7 +376,7 @@ function TabExcel({ onSuccess }: { onSuccess: () => void }) {
             disabled={importando}
             whileTap={{ scale: 0.97 }}
             className="w-full rounded-[20px] py-4 text-[17px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
-            style={{ background: '#141413', color: '#F3F0EE' }}
+            style={{ background: 'var(--ink)', color: 'var(--bg)' }}
           >
             {importando
               ? <><Loader2 size={20} className="animate-spin" /> Importando...</>
@@ -395,7 +395,7 @@ function TabExcel({ onSuccess }: { onSuccess: () => void }) {
           style={{ background: resultado.exitosos > 0 ? '#E8F9ED' : '#FFECEB' }}
         >
           <CheckCircle2 size={32} style={{ color: resultado.exitosos > 0 ? '#34C759' : '#FF3B30' }} />
-          <p className="text-[16px] font-semibold" style={{ color: '#141413' }}>
+          <p className="text-[16px] font-semibold" style={{ color: 'var(--ink)' }}>
             {resultado.exitosos > 0
               ? `¡${resultado.exitosos} vehículo${resultado.exitosos !== 1 ? 's' : ''} importado${resultado.exitosos !== 1 ? 's' : ''}!`
               : 'Error al importar'
@@ -427,7 +427,7 @@ export function CargarVehiculoSheet({ open, onClose }: Props) {
             className="flex-1 py-1.5 rounded-lg text-[14px] font-semibold transition-all"
             style={{
               background: tab === t ? '#FFFFFF' : 'transparent',
-              color: tab === t ? '#141413' : '#696969',
+              color: tab === t ? 'var(--ink)' : '#696969',
               boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
             }}
           >

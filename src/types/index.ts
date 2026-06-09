@@ -172,23 +172,3 @@ export interface ImportResult {
 export type TablesInsert<T> = Omit<T, 'id' | 'created_at' | 'updated_at' | 'user_id'>
 export type TablesUpdate<T> = Partial<TablesInsert<T>>
 
-// ---- HISTORIAL LOCAL ----
-
-export interface GastoHistorial {
-  id: string
-  descripcion: string
-  monto: number
-  categoria: 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro'
-  fecha: string  // ISO date YYYY-MM-DD
-}
-
-export interface VentaHistorial {
-  id: string
-  marca: string
-  modelo: string
-  anio: number
-  ganancia: number
-  roi: number    // percentage e.g. 18.5
-  dias: number   // días en lote
-  fecha: string  // fecha de venta, ISO date YYYY-MM-DD
-}

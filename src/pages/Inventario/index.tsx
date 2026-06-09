@@ -43,12 +43,10 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deletingV, setDeletingV] = useState(false)
 
-  // venta form
   const [precioVenta, setPrecioVenta] = useState(v.precio_venta ? String(v.precio_venta) : '')
   const [fechaVenta, setFechaVenta] = useState(v.fecha_venta ?? new Date().toISOString().slice(0, 10))
   const [savingEstado, setSavingEstado] = useState(false)
 
-  // rep form state
   const [repDesc, setRepDesc] = useState('')
   const [repCosto, setRepCosto] = useState('')
   const [repCat, setRepCat] = useState<CategoriaReparacion>('mecanica')
@@ -121,7 +119,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
     new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
   const Row = ({ label, value, color, bold }: { label: string; value: string; color?: string; bold?: boolean }) => (
-    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: '0.5px solid rgba(20,20,19,0.07)' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '11px 0', borderBottom: '0.5px solid var(--separator)' }}>
       <span style={{ fontSize: 13, color: 'var(--muted)', fontWeight: 500 }}>{label}</span>
       <span style={{ fontSize: 14, fontWeight: bold ? 800 : 600, color: color || 'var(--ink)', letterSpacing: '-0.3px' }}>{value}</span>
     </div>
@@ -156,6 +154,14 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
     }
   }
 
+  const inputBase: React.CSSProperties = {
+    height: 42, borderRadius: 12,
+    border: '1.5px solid var(--separator)',
+    background: 'var(--bg-input)',
+    padding: '0 14px', fontSize: 14, fontFamily: 'var(--font)',
+    color: 'var(--ink)', outline: 'none',
+  }
+
   return (
     <>
       <div onClick={onClose} style={{
@@ -164,20 +170,20 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
       }} />
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: 'var(--cream)', borderRadius: '28px 28px 0 0',
+        background: 'var(--bg-card)', borderRadius: '28px 28px 0 0',
         zIndex: 91, maxHeight: '90svh',
         display: 'flex', flexDirection: 'column',
-        boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
+        boxShadow: 'var(--shadow-lg)',
         animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
       }}>
         <style>{`@keyframes slideUp { from { transform: translateY(100%) } to { transform: translateY(0) } }`}</style>
 
-        {/* Handle + header — fixed inside sheet */}
+        {/* Handle + header */}
         <div style={{ flexShrink: 0 }}>
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(20,20,19,0.18)' }} />
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
           </div>
-          <div style={{ padding: '8px 22px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(20,20,19,0.07)' }}>
+          <div style={{ padding: '8px 22px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '0.5px solid var(--separator)' }}>
             <div>
               <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.6px' }}>{v.marca} {v.modelo}</div>
               <div style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>{v.anio}{v.color ? ` · ${v.color}` : ''}</div>
@@ -203,7 +209,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                   disabled={savingEstado}
                   style={{
                     padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer',
-                    background: isActive ? cm.bg : 'rgba(20,20,19,0.06)',
+                    background: isActive ? cm.bg : 'var(--btn-ghost-bg)',
                     color: isActive ? cm.text : 'var(--muted)',
                     fontSize: 12, fontWeight: isActive ? 700 : 500,
                     fontFamily: 'var(--font)',
@@ -220,14 +226,14 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
             })}
           </div>
 
-          {/* Venta form — aparece al seleccionar Vendido */}
+          {/* Venta form */}
           {cambiandoEstado && (
             <div style={{
-              background: 'rgba(122,171,142,0.08)', borderRadius: 18,
+              background: 'var(--green-bg)', borderRadius: 18,
               padding: '16px', marginBottom: 16,
               border: '1.5px solid rgba(122,171,142,0.25)',
             }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#7AAB8E', marginBottom: 12 }}>Registrar venta</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--green)', marginBottom: 12 }}>Registrar venta</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -236,26 +242,26 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                     onChange={(e) => setPrecioVenta(e.target.value)}
                     placeholder="Precio de venta (USD)"
                     type="number"
-                    style={{ flex: 2, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.9)', padding: '0 14px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 2 }}
                   />
                   <input
                     value={fechaVenta}
                     onChange={(e) => setFechaVenta(e.target.value)}
                     type="date"
-                    style={{ flex: 1, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.9)', padding: '0 14px', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 1, fontSize: 13 }}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={() => setCambiandoEstado(false)}
-                    style={{ flex: 1, height: 42, borderRadius: 999, border: '1.5px solid rgba(20,20,19,0.12)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--muted)', fontFamily: 'var(--font)' }}
+                    style={{ flex: 1, height: 42, borderRadius: 999, border: '1.5px solid var(--separator)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--muted)', fontFamily: 'var(--font)' }}
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleConfirmarVenta}
                     disabled={savingEstado || !precioVenta}
-                    style={{ flex: 2, height: 42, borderRadius: 999, border: 'none', cursor: 'pointer', background: !precioVenta ? 'rgba(20,20,19,0.1)' : '#7AAB8E', color: !precioVenta ? 'var(--muted)' : '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)' }}
+                    style={{ flex: 2, height: 42, borderRadius: 999, border: 'none', cursor: 'pointer', background: !precioVenta ? 'var(--btn-ghost-bg)' : 'var(--green)', color: !precioVenta ? 'var(--muted)' : '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)' }}
                   >
                     {savingEstado ? 'Guardando…' : 'Confirmar venta'}
                   </button>
@@ -265,13 +271,13 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
           )}
 
           {/* Financial summary */}
-          <div style={{ background: 'rgba(255,255,255,0.85)', borderRadius: 20, padding: '4px 16px', marginBottom: 16 }}>
+          <div style={{ background: 'var(--card-glass)', borderRadius: 20, padding: '4px 16px', marginBottom: 16 }}>
             <Row label="Precio de compra" value={fmt(v.precio_compra)} />
             {(v.gastos_adicionales ?? 0) > 0 && (
-              <Row label="Gastos adicionales" value={`−${fmt(v.gastos_adicionales)}`} color="#C07070" />
+              <Row label="Gastos adicionales" value={`−${fmt(v.gastos_adicionales)}`} color="var(--red)" />
             )}
             {totalReparaciones > 0 && (
-              <Row label="Reparaciones" value={`−${fmt(totalReparaciones)}`} color="#C07070" />
+              <Row label="Reparaciones" value={`−${fmt(totalReparaciones)}`} color="var(--red)" />
             )}
             <Row label="Costo total" value={fmt(costoTotal)} bold />
             {v.precio_venta && <Row label="Precio de venta" value={fmt(v.precio_venta)} />}
@@ -279,11 +285,11 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
               <Row
                 label="Ganancia neta"
                 value={ganancia >= 0 ? `+${fmt(ganancia)}` : fmt(ganancia)}
-                color={ganancia >= 0 ? '#7AAB8E' : '#C07070'}
+                color={ganancia >= 0 ? 'var(--green)' : 'var(--red)'}
                 bold
               />
             )}
-            {roi != null && <Row label="ROI" value={`${roi}%`} color="#7A96B8" />}
+            {roi != null && <Row label="ROI" value={`${roi}%`} color="var(--blue)" />}
           </div>
 
           {/* Reparaciones section */}
@@ -295,15 +301,15 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
               onClick={() => setAddingRep((s) => !s)}
               style={{
                 display: 'flex', alignItems: 'center', gap: 5,
-                background: addingRep ? 'rgba(20,20,19,0.08)' : 'var(--ink)',
+                background: addingRep ? 'var(--btn-ghost-bg)' : 'var(--ink)',
                 border: 'none', cursor: 'pointer',
                 padding: '5px 12px', borderRadius: 999,
               }}
             >
               <svg width="12" height="12" fill="none" viewBox="0 0 24 24">
-                <path d={addingRep ? 'M18 6L6 18M6 6l12 12' : 'M12 5v14M5 12h14'} stroke={addingRep ? 'var(--ink)' : '#F3F0EE'} strokeWidth="2.2" strokeLinecap="round"/>
+                <path d={addingRep ? 'M18 6L6 18M6 6l12 12' : 'M12 5v14M5 12h14'} stroke={addingRep ? 'var(--ink)' : 'var(--bg)'} strokeWidth="2.2" strokeLinecap="round"/>
               </svg>
-              <span style={{ fontSize: 11, fontWeight: 700, color: addingRep ? 'var(--ink)' : '#F3F0EE', fontFamily: 'var(--font)' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: addingRep ? 'var(--ink)' : 'var(--bg)', fontFamily: 'var(--font)' }}>
                 {addingRep ? 'Cancelar' : 'Agregar gasto'}
               </span>
             </button>
@@ -312,10 +318,10 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
           {/* Add rep form */}
           {addingRep && (
             <div style={{
-              background: 'rgba(255,255,255,0.9)', borderRadius: 20,
+              background: 'var(--card-glass)', borderRadius: 20,
               padding: '16px', marginBottom: 12,
-              boxShadow: '0 2px 16px rgba(20,20,19,0.08)',
-              border: '1px solid rgba(20,20,19,0.08)',
+              boxShadow: 'var(--shadow-sm)',
+              border: '1px solid var(--separator)',
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <input
@@ -323,7 +329,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                   value={repDesc}
                   onChange={(e) => setRepDesc(e.target.value)}
                   placeholder="Descripción (ej: Cambio de aceite)"
-                  style={{ width: '100%', height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 14px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                  style={{ ...inputBase, width: '100%' }}
                 />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -331,20 +337,20 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                     onChange={(e) => setRepCosto(e.target.value)}
                     placeholder="Costo (USD)"
                     type="number"
-                    style={{ flex: 1, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 14px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 1 }}
                   />
                   <input
                     value={repFecha}
                     onChange={(e) => setRepFecha(e.target.value)}
                     type="date"
-                    style={{ flex: 1, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 14px', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 1, fontSize: 13 }}
                   />
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <select
                     value={repCat}
                     onChange={(e) => setRepCat(e.target.value as CategoriaReparacion)}
-                    style={{ flex: 1, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 14px', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 1, fontSize: 13 }}
                   >
                     {(Object.entries(catRepConfig) as [CategoriaReparacion, { label: string }][]).map(([k, v]) => (
                       <option key={k} value={k}>{v.label}</option>
@@ -354,7 +360,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                     value={repProveedor}
                     onChange={(e) => setRepProveedor(e.target.value)}
                     placeholder="Proveedor (opcional)"
-                    style={{ flex: 1, height: 42, borderRadius: 12, border: '1.5px solid rgba(20,20,19,0.12)', background: 'rgba(255,255,255,0.8)', padding: '0 14px', fontSize: 13, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}
+                    style={{ ...inputBase, flex: 1, fontSize: 13 }}
                   />
                 </div>
                 <button
@@ -362,8 +368,8 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                   disabled={saving || !repDesc || !repCosto}
                   style={{
                     width: '100%', height: 46, borderRadius: 999, border: 'none', cursor: 'pointer',
-                    background: (saving || !repDesc || !repCosto) ? 'rgba(20,20,19,0.12)' : 'var(--ink)',
-                    color: (saving || !repDesc || !repCosto) ? 'var(--muted)' : '#F3F0EE',
+                    background: (saving || !repDesc || !repCosto) ? 'var(--btn-ghost-bg)' : 'var(--ink)',
+                    color: (saving || !repDesc || !repCosto) ? 'var(--muted)' : 'var(--bg)',
                     fontSize: 14, fontWeight: 700, fontFamily: 'var(--font)',
                   }}
                 >
@@ -378,9 +384,9 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
             <div style={{ padding: '12px 0', color: 'var(--muted)', fontSize: 13, textAlign: 'center' }}>Cargando…</div>
           ) : reparaciones.length === 0 ? (
             <div style={{
-              background: 'rgba(255,255,255,0.6)', borderRadius: 16,
+              background: 'var(--card-glass)', borderRadius: 16,
               padding: '20px', textAlign: 'center',
-              border: '1.5px dashed rgba(20,20,19,0.10)',
+              border: '1.5px dashed var(--separator)',
             }}>
               <div style={{ fontSize: 13, color: 'var(--muted)', lineHeight: 1.5 }}>
                 Sin gastos registrados<br/>
@@ -394,10 +400,10 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                 const fecha = new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
                 return (
                   <div key={r.id} style={{
-                    background: 'rgba(255,255,255,0.85)', borderRadius: 16,
+                    background: 'var(--card-glass)', borderRadius: 16,
                     padding: '12px 14px',
                     display: 'flex', alignItems: 'center', gap: 12,
-                    boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
+                    boxShadow: 'var(--shadow-sm)',
                   }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: 11, flexShrink: 0,
@@ -414,7 +420,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                         {fecha} · {cat.label}{r.proveedor ? ` · ${r.proveedor}` : ''}
                       </div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: '#C07070', flexShrink: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)', flexShrink: 0 }}>
                       −{fmt(r.costo)}
                     </div>
                   </div>
@@ -424,7 +430,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
           )}
 
           {v.notas && (
-            <div style={{ background: 'rgba(255,255,255,0.8)', borderRadius: 14, padding: '12px 16px', marginTop: 12 }}>
+            <div style={{ background: 'var(--card-glass)', borderRadius: 14, padding: '12px 16px', marginTop: 12 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>Notas</div>
               <p style={{ fontSize: 13, color: 'var(--ink2)', lineHeight: 1.5, margin: 0 }}>{v.notas}</p>
             </div>
@@ -437,33 +443,33 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                 onClick={() => setConfirmDelete(true)}
                 style={{
                   width: '100%', height: 46, borderRadius: 999, border: '1.5px solid rgba(192,112,112,0.35)',
-                  background: 'rgba(192,112,112,0.07)', cursor: 'pointer',
-                  fontSize: 13, fontWeight: 700, color: '#C07070', fontFamily: 'var(--font)',
+                  background: 'var(--red-bg)', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 700, color: 'var(--red)', fontFamily: 'var(--font)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
                 }}
               >
                 <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#C07070" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="var(--red)" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
                 Eliminar vehículo
               </button>
             ) : (
-              <div style={{ background: 'rgba(192,112,112,0.08)', borderRadius: 18, padding: 16, border: '1.5px solid rgba(192,112,112,0.25)' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#C07070', marginBottom: 6 }}>¿Eliminar este vehículo?</div>
+              <div style={{ background: 'var(--red-bg)', borderRadius: 18, padding: 16, border: '1.5px solid rgba(192,112,112,0.25)' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>¿Eliminar este vehículo?</div>
                 <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 14, lineHeight: 1.5 }}>
                   Se eliminará permanentemente junto con todas sus reparaciones y gastos.
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    style={{ flex: 1, height: 42, borderRadius: 999, border: '1.5px solid rgba(20,20,19,0.12)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--muted)', fontFamily: 'var(--font)' }}
+                    style={{ flex: 1, height: 42, borderRadius: 999, border: '1.5px solid var(--separator)', background: 'transparent', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: 'var(--muted)', fontFamily: 'var(--font)' }}
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleEliminar}
                     disabled={deletingV}
-                    style={{ flex: 2, height: 42, borderRadius: 999, border: 'none', cursor: 'pointer', background: '#C07070', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', opacity: deletingV ? 0.6 : 1 }}
+                    style={{ flex: 2, height: 42, borderRadius: 999, border: 'none', cursor: 'pointer', background: 'var(--red)', color: '#fff', fontSize: 13, fontWeight: 700, fontFamily: 'var(--font)', opacity: deletingV ? 0.6 : 1 }}
                   >
                     {deletingV ? 'Eliminando…' : 'Sí, eliminar'}
                   </button>
@@ -547,7 +553,7 @@ export default function Inventario() {
     <div style={{ height: '100svh', position: 'relative', overflow: 'hidden' }}>
       <div className="scrollable" style={{
         height: '100%',
-        background: 'radial-gradient(ellipse 120% 60% at 60% 0%, #EDE8E0 0%, #F3F0EE 55%, #F7F4F0 100%)',
+        background: 'var(--bg-gradient)',
         paddingBottom: 120,
       }}>
         {/* Header */}
@@ -562,14 +568,14 @@ export default function Inventario() {
                 onClick={() => setSearchOpen((s) => !s)}
                 style={{
                   width: 40, height: 40, borderRadius: 14,
-                  background: searchOpen ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
+                  background: searchOpen ? 'var(--ink)' : 'var(--btn-ghost-bg)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: 'none', cursor: 'pointer',
                 }}
               >
                 <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="7" stroke={searchOpen ? '#F3F0EE' : 'var(--ink2)'} strokeWidth="1.9"/>
-                  <path d="M16.5 16.5L21 21" stroke={searchOpen ? '#F3F0EE' : 'var(--ink2)'} strokeWidth="1.9" strokeLinecap="round"/>
+                  <circle cx="11" cy="11" r="7" stroke={searchOpen ? 'var(--bg)' : 'var(--ink2)'} strokeWidth="1.9"/>
+                  <path d="M16.5 16.5L21 21" stroke={searchOpen ? 'var(--bg)' : 'var(--ink2)'} strokeWidth="1.9" strokeLinecap="round"/>
                 </svg>
               </button>
               <button
@@ -577,11 +583,11 @@ export default function Inventario() {
                 style={{
                   width: 40, height: 40, borderRadius: 14,
                   background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(20,20,19,0.18)',
+                  border: 'none', cursor: 'pointer', boxShadow: 'var(--shadow-md)',
                 }}
               >
                 <svg width="17" height="17" fill="none" viewBox="0 0 24 24">
-                  <path d="M12 5v14M5 12h14" stroke="#F3F0EE" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M12 5v14M5 12h14" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </button>
             </div>
@@ -596,8 +602,8 @@ export default function Inventario() {
                 placeholder="Buscar marca, modelo..."
                 style={{
                   width: '100%', height: 42, borderRadius: 14,
-                  border: '1.5px solid rgba(20,20,19,0.12)',
-                  background: 'rgba(255,255,255,0.8)',
+                  border: '1.5px solid var(--separator)',
+                  background: 'var(--bg-input)',
                   padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)',
                   color: 'var(--ink)', outline: 'none',
                 }}
@@ -609,11 +615,11 @@ export default function Inventario() {
         {/* Summary strip */}
         <div style={{ padding: '14px 22px 0', display: 'flex', gap: 10 }}>
           <div style={{
-            flex: 1, background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(12px)',
+            flex: 1, background: 'var(--card-glass)', backdropFilter: 'blur(12px)',
             WebkitBackdropFilter: 'blur(12px)', borderRadius: 18,
             padding: '12px 16px',
-            boxShadow: '0 2px 12px rgba(20,20,19,0.05)',
-            border: '0.5px solid rgba(20,20,19,0.06)',
+            boxShadow: 'var(--shadow-sm)',
+            border: '0.5px solid var(--separator)',
           }}>
             <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'var(--muted)', marginBottom: 3 }}>En stock</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.8px' }}>
@@ -622,9 +628,9 @@ export default function Inventario() {
             </div>
           </div>
           <div style={{
-            flex: 2, background: 'var(--ink)',
+            flex: 2, background: 'var(--surface-deep)',
             borderRadius: 18, padding: '12px 16px',
-            boxShadow: '0 4px 18px rgba(20,20,19,0.15)',
+            boxShadow: 'var(--shadow-dark)',
           }}>
             <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.8, color: 'rgba(243,240,238,0.45)', marginBottom: 3 }}>Valor inventario activo</div>
             <div style={{ fontSize: 22, fontWeight: 900, color: '#F3F0EE', letterSpacing: '-0.8px' }}>
@@ -641,8 +647,8 @@ export default function Inventario() {
               onClick={() => setFiltro(f.id)}
               style={{
                 padding: '7px 14px', borderRadius: 999, border: 'none', cursor: 'pointer', flexShrink: 0,
-                background: filtro === f.id ? 'var(--ink)' : 'rgba(20,20,19,0.07)',
-                color: filtro === f.id ? '#F3F0EE' : 'var(--ink2)',
+                background: filtro === f.id ? 'var(--ink)' : 'var(--btn-ghost-bg)',
+                color: filtro === f.id ? 'var(--bg)' : 'var(--ink2)',
                 fontSize: 12, fontWeight: 700, fontFamily: 'var(--font)',
                 display: 'flex', alignItems: 'center', gap: 5,
                 transition: 'all .15s',
@@ -651,19 +657,19 @@ export default function Inventario() {
               {f.label}
               <span style={{
                 fontSize: 10, fontWeight: 800,
-                background: filtro === f.id ? 'rgba(243,240,238,0.2)' : 'rgba(20,20,19,0.1)',
+                background: filtro === f.id ? 'rgba(243,240,238,0.2)' : 'var(--btn-ghost-bg)',
                 padding: '1px 5px', borderRadius: 999,
               }}>{f.count}</span>
             </button>
           ))}
         </div>
 
-        {/* Vehicle list agrupada por mes */}
+        {/* Vehicle list */}
         <div ref={listRef} style={{ padding: '12px 22px 0' }}>
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[1, 2, 3].map((i) => (
-                <div key={i} style={{ height: 72, borderRadius: 22, background: 'rgba(20,20,19,0.07)', animation: 'pulse 1.5s ease-in-out infinite' }} />
+                <div key={i} style={{ height: 72, borderRadius: 22, background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
               ))}
             </div>
           ) : vehiculosFiltrados.length === 0 ? (
@@ -687,10 +693,10 @@ export default function Inventario() {
                   <span style={{
                     fontSize: 10, fontWeight: 700,
                     color: 'var(--muted)',
-                    background: 'rgba(20,20,19,0.07)',
+                    background: 'var(--btn-ghost-bg)',
                     padding: '2px 7px', borderRadius: 999,
                   }}>{autos.length}</span>
-                  <div style={{ flex: 1, height: '0.5px', background: 'rgba(20,20,19,0.10)' }} />
+                  <div style={{ flex: 1, height: '0.5px', background: 'var(--separator)' }} />
                 </div>
 
                 {/* Cards del mes */}
@@ -705,19 +711,19 @@ export default function Inventario() {
                         key={v.id}
                         onClick={() => setSelected(v)}
                         style={{
-                          background: 'rgba(255,255,255,0.85)',
+                          background: 'var(--card-glass)',
                           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
                           borderRadius: 22, padding: '14px 16px',
-                          boxShadow: '0 1px 12px rgba(20,20,19,0.05)',
-                          border: '0.5px solid rgba(20,20,19,0.06)',
+                          boxShadow: 'var(--shadow-sm)',
+                          border: '0.5px solid var(--separator)',
                           display: 'flex', alignItems: 'center', gap: 14,
                           cursor: 'pointer', textAlign: 'left', width: '100%',
                         }}
                       >
                         <div style={{
                           width: 72, height: 58, borderRadius: 16, flexShrink: 0,
-                          background: '#fff',
-                          boxShadow: '0 1px 6px rgba(20,20,19,0.10)',
+                          background: 'var(--bg-card)',
+                          boxShadow: 'var(--shadow-sm)',
                           border: `1.5px solid ${c.text}22`,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           padding: '10px 12px',
@@ -726,7 +732,7 @@ export default function Inventario() {
                             <img
                               src={BRAND_LOGOS[v.marca]}
                               alt={v.marca}
-                              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'brightness(0)', opacity: 0.88 }}
+                              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'var(--logo-filter)', opacity: 0.88 }}
                             />
                           ) : (
                             <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
@@ -751,7 +757,7 @@ export default function Inventario() {
                             background: c.bg, color: c.text, letterSpacing: 0.2,
                           }}>{estadoLabel}</span>
                           {ganancia != null ? (
-                            <span style={{ fontSize: 13, fontWeight: 800, color: '#7AAB8E' }}>+{fmtShort(ganancia)}</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--green)' }}>+{fmtShort(ganancia)}</span>
                           ) : (
                             <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--muted)' }}>{fmtShort(v.precio_compra)}</span>
                           )}
