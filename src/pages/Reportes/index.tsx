@@ -258,7 +258,7 @@ export default function Reportes() {
           nombre: `${v.marca} ${v.modelo} ${v.anio}`,
           marca: v.marca,
           ganancia,
-          roi: Math.round((ganancia / costo) * 100),
+          roi: costo > 0 ? Math.round((ganancia / costo) * 100) : 0,
         }
       })
       .sort((a, b) => b.ganancia - a.ganancia)
@@ -290,29 +290,30 @@ export default function Reportes() {
     const vendidos = vehiculos.filter((v) =>
       v.estado === 'vendido' && v.precio_venta && v.fecha_venta?.startsWith(filterKey)
     )
-    const brands: Record<string, { ganancia: number; roiSum: number; roiCount: number; unidades: number; diasSum: number; diasCount: number }> = {}
+    const brands: Record<string, { ganancia: number; costo: number; unidades: number; diasSum: number; diasCount: number }> = {}
     vendidos.forEach((v) => {
       const costo = costoVehiculo(v)
       const gan = v.precio_venta! - costo
-      const roi = costo > 0 ? (gan / costo) * 100 : 0
       const dias = v.fecha_venta
         ? Math.floor((new Date(v.fecha_venta + 'T00:00:00').getTime() - new Date(v.fecha_compra + 'T00:00:00').getTime()) / 86_400_000)
         : 0
-      if (!brands[v.marca]) brands[v.marca] = { ganancia: 0, roiSum: 0, roiCount: 0, unidades: 0, diasSum: 0, diasCount: 0 }
+      if (!brands[v.marca]) brands[v.marca] = { ganancia: 0, costo: 0, unidades: 0, diasSum: 0, diasCount: 0 }
       brands[v.marca].ganancia += gan
-      brands[v.marca].roiSum += roi
-      brands[v.marca].roiCount++
+      brands[v.marca].costo += costo
       brands[v.marca].unidades++
       if (dias > 0) { brands[v.marca].diasSum += dias; brands[v.marca].diasCount++ }
     })
-    // Sort by ganancia descending first, then assign colors by stable position
+    // ROI ponderado: ganancia total / costo total. Evita explosiones de outliers
+    // y maneja correctamente pérdidas (margen negativo legítimo).
     const sorted = Object.entries(brands)
       .map(([marca, d]) => ({
         marca,
         ganancia: d.ganancia,
-        roi: d.roiCount > 0 ? d.roiSum / d.roiCount : 0,
+        costo: d.costo,
+        roi: d.costo > 0 ? (d.ganancia / d.costo) * 100 : 0,
         unidades: d.unidades,
         dias: d.diasCount > 0 ? d.diasSum / d.diasCount : 0,
+        isLoss: d.ganancia < 0,
       }))
       .sort((a, b) => b.ganancia - a.ganancia)
 
@@ -343,16 +344,16 @@ export default function Reportes() {
     URL.revokeObjectURL(url)
   }
 
-  const totalMarcaGanancia = marcasData.reduce((a, m) => a + m.ganancia, 0)
   const marcaSegments = [...marcasData]
     .sort((a, b) => b.ganancia - a.ganancia)
     .map((m) => ({
       marca: m.marca,
-      color: m.color,
-      bg: m.bg,
-      pct: totalMarcaGanancia > 0 ? Math.round((m.ganancia / totalMarcaGanancia) * 100) : 0,
+      color: m.isLoss ? 'var(--red)' : m.color,
+      bg: m.isLoss ? 'var(--red-bg)' : m.bg,
+      roi: m.roi,
       ganancia: m.ganancia,
       unidades: m.unidades,
+      isLoss: m.isLoss,
     }))
 
   return (
@@ -389,7 +390,8 @@ export default function Reportes() {
           </div>
         </div>
 
-        {/* Pie chart — brand ganancia distribution */}
+        {/* Pie chart — solo marcas con ganancia positiva.
+            Las pérdidas se reportan en los cards de abajo, no en el chart. */}
         <div style={{ padding: '8px 8px 0' }}>
           {!auxReady ? (
             <div style={{ height: 300, borderRadius: 24, background: 'var(--btn-ghost-bg)', animation: 'pulse 1.5s ease-in-out infinite' }} />
@@ -404,9 +406,23 @@ export default function Reportes() {
               </svg>
               <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--muted)' }}>Sin ventas en {navLabel}</span>
             </div>
+          ) : marcaSegments.every((m) => m.isLoss) ? (
+            <div style={{
+              height: 200, margin: '0 8px',
+              background: 'var(--red-bg)', borderRadius: 24,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+              <svg width="32" height="32" fill="none" viewBox="0 0 24 24">
+                <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>Sin ganancias en {navLabel}</span>
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>Todas las marcas en pérdida</span>
+            </div>
           ) : (
             <PieDistribution
-              data={marcaSegments.map((m) => ({ name: m.marca, value: m.ganancia, fill: m.color }))}
+              data={marcaSegments
+                .filter((m) => !m.isLoss)
+                .map((m) => ({ name: m.marca, value: m.ganancia, fill: m.color }))}
             />
           )}
         </div>
@@ -477,7 +493,9 @@ export default function Reportes() {
                   <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{fmtN(m.ganancia)} · {m.unidades} unid</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                  <span style={{ fontSize: 17, fontWeight: 800, color: 'var(--ink)', letterSpacing: '-0.3px' }}>{m.pct}%</span>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: m.isLoss ? 'var(--red)' : 'var(--green)', letterSpacing: '-0.3px' }}>
+                    {m.roi >= 0 ? '+' : ''}{m.roi.toFixed(1)}%
+                  </span>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: m.color }} />
                 </div>
               </div>
