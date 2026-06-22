@@ -372,7 +372,7 @@ export default function Gastos() {
                     <X size={14} strokeWidth={2} color="#fff" />
                   </button>
                 </div>
-                <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-1.5px', lineHeight: 1 }}>
+                <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', letterSpacing: '-1.5px', lineHeight: 1.15, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {fmtUSD(cat.total)}
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>
