@@ -1,5 +1,6 @@
 import { memo, startTransition, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Download } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts'
 import { useVehiculosStore } from '../../store/vehiculosStore'
 import { BRAND_LOGOS } from '../Inventario/CargarVehiculoSheet'
@@ -7,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import type { GastoGeneral } from '../../types'
 import { useCountUp } from '../../hooks/animations/useCountUp'
 import { useStaggerIn } from '../../hooks/animations/useStaggerIn'
+import { ExportarReporteSheet } from '../../components/shared/ExportarReporteSheet'
 
 const fmtN = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
@@ -119,6 +121,7 @@ export default function Reportes() {
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
   const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
   const [selectedBar, setSelectedBar] = useState<number | null>(null)
+  const [exportOpen, setExportOpen] = useState(false)
 
   useEffect(() => {
     fetchVehiculos()
@@ -326,24 +329,6 @@ export default function Reportes() {
   const gananciaMesDisplay = useCountUp(gananciaMesSeleccionado, auxReady)
   const gananciaAnualDisplay = useCountUp(gananciaAnual, auxReady)
 
-  const handleExport = () => {
-    const rows = [
-      ['Marca', 'Modelo', 'Año', 'Estado', 'Compra', 'Venta', 'Ganancia'],
-      ...vehiculos.map((v) => [
-        v.marca, v.modelo, v.anio, v.estado,
-        v.precio_compra, v.precio_venta ?? '', v.precio_venta ? v.precio_venta - v.precio_compra : '',
-      ]),
-    ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `motohub-reporte-${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
   const marcaSegments = [...marcasData]
     .sort((a, b) => b.ganancia - a.ganancia)
     .map((m) => ({
@@ -378,14 +363,15 @@ export default function Reportes() {
                 <circle cx="12" cy="12" r="9" stroke="var(--ink2)" strokeWidth="1.8"/>
               </svg>
             </button>
-            <button onClick={handleExport} style={{
-              width: 38, height: 38, borderRadius: 12, background: 'var(--ink)',
-              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            <button onClick={() => setExportOpen(true)} style={{
+              height: 38, padding: '0 14px', borderRadius: 999, background: 'var(--ink)',
+              border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
               boxShadow: '0 4px 12px rgba(20,20,19,0.18)',
             }}>
-              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="var(--bg)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
+              <Download size={13} color="var(--bg)" strokeWidth={2.2} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--bg)', fontFamily: 'var(--font)', letterSpacing: '-0.2px' }}>
+                Exportar
+              </span>
             </button>
           </div>
         </div>
@@ -896,6 +882,15 @@ export default function Reportes() {
           </div>
         )}
       </div>
+
+      {exportOpen && (
+        <ExportarReporteSheet
+          defaultPeriodo={periodo === 'anio' ? 'anio' : 'mes'}
+          mesActual={mesIdx}
+          anioActual={anioNav}
+          onClose={() => setExportOpen(false)}
+        />
+      )}
     </div>
   )
 }
