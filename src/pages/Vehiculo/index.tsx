@@ -5,6 +5,7 @@ import { useVehiculosStore } from '../../store/vehiculosStore'
 import { supabase } from '../../lib/supabase'
 import { BRAND_LOGOS } from '../Inventario/CargarVehiculoSheet'
 import type { Reparacion, CategoriaReparacion, EstadoVehiculo } from '../../types'
+import { EditReparacionSheet } from '../../components/shared/EditReparacionSheet'
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
@@ -51,6 +52,7 @@ export default function VehiculoDetalle() {
   const [reparaciones, setReparaciones] = useState<Reparacion[]>([])
   const [loadingReps, setLoadingReps] = useState(true)
   const [addingRep, setAddingRep] = useState(false)
+  const [editingRep, setEditingRep] = useState<Reparacion | null>(null)
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
   const [savingEstado, setSavingEstado] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
@@ -313,7 +315,7 @@ export default function VehiculoDetalle() {
               const cat = catConfig[r.categoria] ?? catConfig.otro
               const fecha = new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
               return (
-                <div key={r.id} style={{ background: 'var(--card-glass)', borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 8px rgba(20,20,19,0.04)' }}>
+                <button key={r.id} onClick={() => setEditingRep(r)} style={{ background: 'var(--card-glass)', borderRadius: 16, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 8px rgba(20,20,19,0.04)', border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%' }}>
                   <div style={{ width: 36, height: 36, borderRadius: 11, flexShrink: 0, background: `${cat.color}18`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color }} />
                   </div>
@@ -322,7 +324,7 @@ export default function VehiculoDetalle() {
                     <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>{fecha} · {cat.label}{r.proveedor ? ` · ${r.proveedor}` : ''}</div>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)', flexShrink: 0 }}>−{fmt(r.costo)}</div>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -377,6 +379,21 @@ export default function VehiculoDetalle() {
           )}
         </div>
       </div>
+
+      {editingRep && (
+        <EditReparacionSheet
+          reparacion={editingRep}
+          onClose={() => setEditingRep(null)}
+          onSaved={(updated) => {
+            setReparaciones((prev) => prev.map((r) => r.id === updated.id ? updated : r))
+            setEditingRep(null)
+          }}
+          onDeleted={(id) => {
+            setReparaciones((prev) => prev.filter((r) => r.id !== id))
+            setEditingRep(null)
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -1,12 +1,17 @@
 import { useState, useMemo, useEffect } from 'react'
 import { BackHeader } from '../../components/ios/BackHeader'
 import { supabase } from '../../lib/supabase'
-import type { GastoGeneral, CategoriaGasto } from '../../types'
+import type { GastoGeneral, CategoriaGasto, Reparacion } from '../../types'
+import { EditGastoSheet } from '../../components/shared/EditGastoSheet'
+import { EditReparacionSheet } from '../../components/shared/EditReparacionSheet'
 
 type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro' | 'reparaciones'
 // Solo estas categorías son seleccionables al agregar un gasto manual; las
 // reparaciones se cargan desde el detalle del vehículo.
 type AddableCat = Exclude<CatKey, 'reparaciones'>
+
+// Reparación tal cual viene del join: campos completos + el vehículo asociado.
+type RepWithVehiculo = Reparacion & { vehiculos: { marca: string; modelo: string } | null }
 
 interface GastoRow {
   id: string
@@ -16,14 +21,6 @@ interface GastoRow {
   fecha: string
   source: 'gasto' | 'reparacion'
   vehiculo?: string  // "Marca Modelo" para reparaciones
-}
-
-interface RepRow {
-  id: string
-  descripcion: string
-  costo: number
-  fecha: string
-  vehiculos: { marca: string; modelo: string } | null
 }
 
 const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = {
@@ -44,11 +41,16 @@ function toDisplayCat(c: CategoriaGasto): AddableCat {
 }
 
 export default function HistorialGastos() {
-  const [gastos, setGastos] = useState<GastoRow[]>([])
+  // Guardamos los objetos completos para poder pasarlos a los sheets de edición.
+  // El render se hace sobre la lista derivada `rows`.
+  const [gastosRaw, setGastosRaw] = useState<GastoGeneral[]>([])
+  const [repsRaw, setRepsRaw] = useState<RepWithVehiculo[]>([])
   const [loading, setLoading] = useState(true)
   const [anioFiltro, setAnioFiltro] = useState<string>('todos')
   const [busqueda, setBusqueda] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [editingGasto, setEditingGasto] = useState<GastoGeneral | null>(null)
+  const [editingRep, setEditingRep] = useState<RepWithVehiculo | null>(null)
 
   useEffect(() => {
     let active = true
@@ -56,47 +58,49 @@ export default function HistorialGastos() {
       const [gRes, rRes] = await Promise.all([
         supabase
           .from('gastos_generales')
-          .select('id, descripcion, monto, categoria, fecha')
+          .select('*')
           .order('fecha', { ascending: false }),
         supabase
           .from('reparaciones')
-          .select('id, descripcion, costo, fecha, vehiculos(marca, modelo)')
+          .select('*, vehiculos(marca, modelo)')
           .order('fecha', { ascending: false }),
       ])
       if (!active) return
-
-      const gastosRows: GastoRow[] = (gRes.data as GastoGeneral[] | null ?? []).map((g) => ({
-        id: g.id,
-        descripcion: g.descripcion,
-        monto: g.monto,
-        categoria: toDisplayCat(g.categoria),
-        fecha: g.fecha,
-        source: 'gasto',
-      }))
-
-      const repsRows: GastoRow[] = ((rRes.data as unknown as RepRow[] | null) ?? []).map((r) => ({
-        id: r.id,
-        descripcion: r.descripcion || 'Reparación',
-        monto: r.costo,
-        categoria: 'reparaciones',
-        fecha: r.fecha,
-        source: 'reparacion',
-        vehiculo: r.vehiculos ? `${r.vehiculos.marca} ${r.vehiculos.modelo}` : undefined,
-      }))
-
-      setGastos([...gastosRows, ...repsRows].sort((a, b) => b.fecha.localeCompare(a.fecha)))
+      setGastosRaw((gRes.data as GastoGeneral[] | null) ?? [])
+      setRepsRaw((rRes.data as unknown as RepWithVehiculo[] | null) ?? [])
       setLoading(false)
     })()
     return () => { active = false }
   }, [])
 
+  const rows = useMemo<GastoRow[]>(() => {
+    const gastoRows: GastoRow[] = gastosRaw.map((g) => ({
+      id: g.id,
+      descripcion: g.descripcion,
+      monto: g.monto,
+      categoria: toDisplayCat(g.categoria),
+      fecha: g.fecha,
+      source: 'gasto',
+    }))
+    const repRows: GastoRow[] = repsRaw.map((r) => ({
+      id: r.id,
+      descripcion: r.descripcion || 'Reparación',
+      monto: r.costo,
+      categoria: 'reparaciones',
+      fecha: r.fecha,
+      source: 'reparacion',
+      vehiculo: r.vehiculos ? `${r.vehiculos.marca} ${r.vehiculos.modelo}` : undefined,
+    }))
+    return [...gastoRows, ...repRows].sort((a, b) => b.fecha.localeCompare(a.fecha))
+  }, [gastosRaw, repsRaw])
+
   const anios = useMemo(() => {
-    const set = new Set(gastos.map((g) => g.fecha.slice(0, 4)))
+    const set = new Set(rows.map((g) => g.fecha.slice(0, 4)))
     return Array.from(set).sort((a, b) => b.localeCompare(a))
-  }, [gastos])
+  }, [rows])
 
   const filtrados = useMemo(() => {
-    return gastos
+    return rows
       .filter((g) => anioFiltro === 'todos' || g.fecha.startsWith(anioFiltro))
       .filter((g) => {
         if (!busqueda) return true
@@ -104,7 +108,7 @@ export default function HistorialGastos() {
         return g.descripcion.toLowerCase().includes(q) || (g.vehiculo?.toLowerCase().includes(q) ?? false)
       })
       .sort((a, b) => b.fecha.localeCompare(a.fecha))
-  }, [gastos, anioFiltro, busqueda])
+  }, [rows, anioFiltro, busqueda])
 
   const porMes = useMemo(() => {
     const map = new Map<string, GastoRow[]>()
@@ -124,12 +128,14 @@ export default function HistorialGastos() {
 
   const totalGeneral = filtrados.reduce((s, g) => s + g.monto, 0)
 
-  async function handleDelete(row: GastoRow) {
-    if (row.source !== 'gasto') return // las reparaciones se borran desde el vehículo
-    const prev = gastos
-    setGastos((g) => g.filter((x) => !(x.id === row.id && x.source === 'gasto')))
-    const { error } = await supabase.from('gastos_generales').delete().eq('id', row.id)
-    if (error) setGastos(prev)
+  function handleRowClick(row: GastoRow) {
+    if (row.source === 'gasto') {
+      const g = gastosRaw.find((x) => x.id === row.id)
+      if (g) setEditingGasto(g)
+    } else {
+      const r = repsRaw.find((x) => x.id === row.id)
+      if (r) setEditingRep(r)
+    }
   }
 
   async function handleAdd(form: { descripcion: string; monto: number; categoria: AddableCat; fecha: string }) {
@@ -145,28 +151,22 @@ export default function HistorialGastos() {
         recurrente: false,
         user_id: user.id,
       })
-      .select('id, descripcion, monto, categoria, fecha')
+      .select('*')
       .single()
-    if (!error && data) {
-      const row = data as GastoGeneral
-      setGastos((g) => [{
-        id: row.id,
-        descripcion: row.descripcion,
-        monto: row.monto,
-        categoria: toDisplayCat(row.categoria),
-        fecha: row.fecha,
-        source: 'gasto',
-      }, ...g])
-      setSheetOpen(false)
+    if (error || !data) {
+      window.alert(`No se pudo guardar: ${error?.message ?? 'sin datos'}`)
+      return
     }
+    setGastosRaw((g) => [data as GastoGeneral, ...g])
+    setSheetOpen(false)
   }
 
   function handleExport() {
-    const rows = [
+    const rowsCsv = [
       ['ID', 'Tipo', 'Descripcion', 'Monto', 'Categoria', 'Fecha', 'Vehiculo'],
       ...filtrados.map((g) => [g.id, g.source, `"${g.descripcion}"`, g.monto, g.categoria, g.fecha, g.vehiculo ?? '']),
     ]
-    const csv = rows.map((r) => r.join(',')).join('\n')
+    const csv = rowsCsv.map((r) => r.join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -210,7 +210,7 @@ export default function HistorialGastos() {
             <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(243,240,238,0.4)', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8 }}>
               Total acumulado
             </div>
-            <div style={{ fontSize: 42, fontWeight: 900, color: '#F3F0EE', letterSpacing: '-2px', lineHeight: 1 }}>
+            <div style={{ fontSize: 42, fontWeight: 900, color: '#F3F0EE', letterSpacing: '-2px', lineHeight: 1.15 }}>
               {fmt(totalGeneral)}
             </div>
             <div style={{ fontSize: 12, color: 'rgba(243,240,238,0.4)', marginTop: 6 }}>
@@ -257,7 +257,7 @@ export default function HistorialGastos() {
             </div>
           ) : porMes.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 14 }}>
-              {gastos.length === 0 ? 'Sin gastos registrados' : 'Sin resultados para esta búsqueda'}
+              {rows.length === 0 ? 'Sin gastos registrados' : 'Sin resultados para esta búsqueda'}
             </div>
           ) : (
             porMes.map(({ key, label, items, total }) => (
@@ -271,15 +271,19 @@ export default function HistorialGastos() {
                     const c = catConfig[g.categoria]
                     const fecha = new Date(g.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
                     const subtitle = g.vehiculo ? `${fecha} · ${c.label} · ${g.vehiculo}` : `${fecha} · ${c.label}`
-                    const isGasto = g.source === 'gasto'
                     return (
-                      <div key={`${g.source}-${g.id}`} style={{
-                        background: 'var(--card-glass)', backdropFilter: 'blur(8px)',
-                        WebkitBackdropFilter: 'blur(8px)', borderRadius: 18, padding: '13px 16px',
-                        display: 'flex', alignItems: 'center', gap: 13,
-                        boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
-                        border: '0.5px solid var(--separator)',
-                      }}>
+                      <button
+                        key={`${g.source}-${g.id}`}
+                        onClick={() => handleRowClick(g)}
+                        style={{
+                          background: 'var(--card-glass)', backdropFilter: 'blur(8px)',
+                          WebkitBackdropFilter: 'blur(8px)', borderRadius: 18, padding: '13px 16px',
+                          display: 'flex', alignItems: 'center', gap: 13,
+                          boxShadow: '0 1px 8px rgba(20,20,19,0.04)',
+                          border: '0.5px solid var(--separator)',
+                          cursor: 'pointer', textAlign: 'left',
+                        }}
+                      >
                         <div style={{
                           width: 40, height: 40, borderRadius: 13, flexShrink: 0,
                           background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -292,25 +296,8 @@ export default function HistorialGastos() {
                           </div>
                           <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{subtitle}</div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)' }}>−{fmt(g.monto)}</div>
-                          {isGasto && (
-                            <button
-                              onClick={() => handleDelete(g)}
-                              style={{
-                                width: 30, height: 30, borderRadius: 10, border: 'none', cursor: 'pointer',
-                                background: 'var(--red-bg)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              }}
-                            >
-                              <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
-                                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"
-                                  stroke="var(--red)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                              </svg>
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)', flexShrink: 0 }}>−{fmt(g.monto)}</div>
+                      </button>
                     )
                   })}
                 </div>
@@ -322,6 +309,36 @@ export default function HistorialGastos() {
 
       {sheetOpen && (
         <AddGastoHistorialSheet onClose={() => setSheetOpen(false)} onSaved={handleAdd} />
+      )}
+
+      {editingGasto && (
+        <EditGastoSheet
+          gasto={editingGasto}
+          onClose={() => setEditingGasto(null)}
+          onSaved={(updated) => {
+            setGastosRaw((prev) => prev.map((x) => x.id === updated.id ? updated : x))
+            setEditingGasto(null)
+          }}
+          onDeleted={(id) => {
+            setGastosRaw((prev) => prev.filter((x) => x.id !== id))
+            setEditingGasto(null)
+          }}
+        />
+      )}
+
+      {editingRep && (
+        <EditReparacionSheet
+          reparacion={editingRep}
+          onClose={() => setEditingRep(null)}
+          onSaved={(updated) => {
+            setRepsRaw((prev) => prev.map((x) => x.id === updated.id ? { ...x, ...updated } : x))
+            setEditingRep(null)
+          }}
+          onDeleted={(id) => {
+            setRepsRaw((prev) => prev.filter((x) => x.id !== id))
+            setEditingRep(null)
+          }}
+        />
       )}
     </div>
   )

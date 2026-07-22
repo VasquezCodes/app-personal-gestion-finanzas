@@ -2,21 +2,19 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Home, Zap, Megaphone, User, MoreHorizontal,
-  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X, Trash2,
+  Wrench, Clock, Plus, ChevronLeft, ChevronRight, X,
 } from 'lucide-react'
 import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label, ResponsiveContainer } from 'recharts'
 import { supabase } from '../../lib/supabase'
-import type { GastoGeneral } from '../../types'
+import type { GastoGeneral, Reparacion } from '../../types'
+import { EditGastoSheet } from '../../components/shared/EditGastoSheet'
+import { EditReparacionSheet } from '../../components/shared/EditReparacionSheet'
 
 type CatKey = 'alquiler' | 'servicios' | 'marketing' | 'personal' | 'otro'
 
-interface RepDetalle {
-  id: string
-  descripcion: string
-  costo: number
-  fecha: string
-  vehiculos: { marca: string; modelo: string } | null
-}
+// Reparación con el vehículo asociado (join). Mantenemos todos los campos
+// para poder editarla desde el sheet de detalle de categoría.
+type RepDetalle = Reparacion & { vehiculos: { marca: string; modelo: string } | null }
 
 const catConfig: Record<CatKey, { label: string; color: string; bg: string }> = {
   alquiler:  { label: 'Alquiler',  color: '#7A96B8', bg: 'rgba(122,150,184,0.12)' },
@@ -98,6 +96,7 @@ export default function Gastos() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [selectedCat, setSelectedCat] = useState<string | null>(null)
   const [editingGasto, setEditingGasto] = useState<GastoGeneral | null>(null)
+  const [editingRep, setEditingRep] = useState<RepDetalle | null>(null)
   const [vista, setVista] = useState<'mes' | 'anio'>('mes')
   const [mesIdx, setMesIdx] = useState(() => new Date().getMonth())
   const [anioNav, setAnioNav] = useState(() => new Date().getFullYear())
@@ -106,7 +105,7 @@ export default function Gastos() {
     setLoading(true)
     Promise.all([
       supabase.from('gastos_generales').select('*').order('fecha', { ascending: false }),
-      supabase.from('reparaciones').select('id, descripcion, costo, fecha, vehiculos(marca, modelo)').order('fecha', { ascending: false }),
+      supabase.from('reparaciones').select('*, vehiculos(marca, modelo)').order('fecha', { ascending: false }),
     ]).then(([gRes, rRes]) => {
       setGastos(gRes.data ?? [])
       setRepsData((rRes.data ?? []) as unknown as RepDetalle[])
@@ -317,6 +316,22 @@ export default function Gastos() {
         />
       )}
 
+      {editingRep && (
+        <EditReparacionSheet
+          reparacion={editingRep}
+          onClose={() => setEditingRep(null)}
+          onSaved={(updated) => {
+            // Preservo el join `vehiculos` que viene del fetch original
+            setRepsData((prev) => prev.map((r) => r.id === updated.id ? { ...r, ...updated } : r))
+            setEditingRep(null)
+          }}
+          onDeleted={(id) => {
+            setRepsData((prev) => prev.filter((r) => r.id !== id))
+            setEditingRep(null)
+          }}
+        />
+      )}
+
       {selectedCat && (() => {
         const cat = catTotals.find(c => c.key === selectedCat)
         if (!cat) return null
@@ -350,10 +365,12 @@ export default function Gastos() {
                 <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
               </div>
 
-              {/* Colored header */}
+              {/* Colored header — flexShrink:0 evita que el items list (flex:1)
+                  lo comprima cuando hay muchos registros, lo que clippeaba el monto. */}
               <div style={{
                 margin: '0 16px 16px', borderRadius: 22, padding: '18px 20px',
                 background: cat.color, position: 'relative', overflow: 'hidden',
+                flexShrink: 0,
               }}>
                 <div style={{ position: 'absolute', right: -20, top: -20, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -388,11 +405,14 @@ export default function Gastos() {
                   </div>
                 ) : isRep ? (
                   (items as RepDetalle[]).map((r) => (
-                    <div key={r.id} style={{
-                      background: 'var(--card-glass)', borderRadius: 16, padding: '12px 16px',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
-                    }}>
+                    <button key={r.id}
+                      onClick={() => setEditingRep(r)}
+                      style={{
+                        width: '100%', background: 'var(--card-glass)', borderRadius: 16, padding: '12px 16px',
+                        display: 'flex', alignItems: 'center', gap: 12,
+                        boxShadow: '0 1px 6px rgba(20,20,19,0.05)',
+                        border: 'none', cursor: 'pointer', textAlign: 'left',
+                      }}>
                       <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--ink)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
@@ -410,7 +430,7 @@ export default function Gastos() {
                         </div>
                         <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 1 }}>{fmtFecha(r.fecha)}</div>
                       </div>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   (items as GastoGeneral[]).map((g) => (
@@ -442,99 +462,6 @@ export default function Gastos() {
         )
       })()}
     </div>
-  )
-}
-
-function EditGastoSheet({ gasto, onClose, onSaved, onDeleted }: {
-  gasto: GastoGeneral
-  onClose: () => void
-  onSaved: (g: GastoGeneral) => void
-  onDeleted: (id: string) => void
-}) {
-  const [desc, setDesc] = useState(gasto.descripcion)
-  const [monto, setMonto] = useState(String(gasto.monto))
-  const [cat, setCat] = useState<CatKey>(gasto.categoria as CatKey)
-  const [fecha, setFecha] = useState(gasto.fecha)
-  const [saving, setSaving] = useState(false)
-  const [confirming, setConfirming] = useState(false)
-
-  async function handleSave() {
-    if (!desc || !monto) return
-    setSaving(true)
-    const { data, error } = await supabase
-      .from('gastos_generales')
-      .update({ descripcion: desc, monto: parseFloat(monto), categoria: cat, fecha })
-      .eq('id', gasto.id)
-      .select().single()
-    setSaving(false)
-    if (!error && data) onSaved(data)
-  }
-
-  async function handleDelete() {
-    if (!confirming) { setConfirming(true); return }
-    setSaving(true)
-    await supabase.from('gastos_generales').delete().eq('id', gasto.id)
-    onDeleted(gasto.id)
-  }
-
-  return (
-    <>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(20,20,19,0.4)', backdropFilter: 'blur(4px)', zIndex: 100 }} />
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0,
-        background: 'var(--bg-card)', borderRadius: '28px 28px 0 0',
-        zIndex: 110, paddingBottom: 34,
-        boxShadow: '0 -8px 40px rgba(20,20,19,0.18)',
-        animation: 'slideUp .3s cubic-bezier(.2,.8,.3,1)',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 12, paddingBottom: 4 }}>
-          <div style={{ width: 36, height: 4, borderRadius: 2, background: 'var(--separator)' }} />
-        </div>
-        <div style={{ padding: '12px 22px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-            <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--ink)', letterSpacing: '-0.5px' }}>Editar gasto</div>
-            <button onClick={onClose} style={{ width: 32, height: 32, borderRadius: 10, background: 'var(--btn-ghost-bg)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <X size={15} color="var(--ink)" strokeWidth={2} />
-            </button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="Descripción"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
-            <input value={monto} onChange={(e) => setMonto(e.target.value)} placeholder="Monto (USD)" type="number"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
-            <select value={cat} onChange={(e) => setCat(e.target.value as CatKey)}
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }}>
-              {(Object.entries(catConfig) as [CatKey, typeof catConfig[CatKey]][]).map(([k, v]) => (
-                <option key={k} value={k}>{v.label}</option>
-              ))}
-            </select>
-            <input value={fecha} onChange={(e) => setFecha(e.target.value)} type="date"
-              style={{ width: '100%', height: 46, borderRadius: 14, border: '1.5px solid var(--separator)', background: 'var(--bg-input)', padding: '0 16px', fontSize: 14, fontFamily: 'var(--font)', color: 'var(--ink)', outline: 'none' }} />
-            <button onClick={handleSave} disabled={saving || !desc || !monto}
-              style={{
-                width: '100%', height: 50, borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: saving || !desc || !monto ? 'rgba(20,20,19,0.15)' : 'var(--ink)',
-                color: saving || !desc || !monto ? 'var(--muted)' : 'var(--bg)',
-                fontSize: 15, fontWeight: 700, fontFamily: 'var(--font)',
-              }}>
-              {saving ? 'Guardando…' : 'Guardar cambios'}
-            </button>
-            <button onClick={handleDelete} disabled={saving}
-              style={{
-                width: '100%', height: 46, borderRadius: 999, border: 'none', cursor: 'pointer',
-                background: confirming ? 'rgba(192,112,112,0.15)' : 'transparent',
-                color: 'var(--red)',
-                fontSize: 14, fontWeight: 700, fontFamily: 'var(--font)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
-                transition: 'background .15s',
-              }}>
-              <Trash2 size={15} strokeWidth={2} />
-              {confirming ? 'Tocá de nuevo para confirmar' : 'Eliminar gasto'}
-            </button>
-          </div>
-        </div>
-      </div>
-    </>
   )
 }
 

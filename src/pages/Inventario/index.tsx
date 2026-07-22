@@ -4,6 +4,7 @@ import { useStaggerIn } from '../../hooks/animations/useStaggerIn'
 import { useVehiculosStore } from '../../store/vehiculosStore'
 import { supabase } from '../../lib/supabase'
 import type { Vehiculo, Reparacion, CategoriaReparacion, EstadoVehiculo } from '../../types'
+import { EditReparacionSheet } from '../../components/shared/EditReparacionSheet'
 
 const fmtShort = (n: number) => `$${Math.round(n).toLocaleString('es-AR')}`
 
@@ -39,6 +40,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
   const [reparaciones, setReparaciones] = useState<Reparacion[]>([])
   const [loadingReps, setLoadingReps] = useState(true)
   const [addingRep, setAddingRep] = useState(false)
+  const [editingRep, setEditingRep] = useState<Reparacion | null>(null)
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deletingV, setDeletingV] = useState(false)
@@ -399,12 +401,15 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                 const cat = catRepConfig[r.categoria] ?? catRepConfig.otro
                 const fecha = new Date(r.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })
                 return (
-                  <div key={r.id} style={{
-                    background: 'var(--card-glass)', borderRadius: 16,
-                    padding: '12px 14px',
-                    display: 'flex', alignItems: 'center', gap: 12,
-                    boxShadow: 'var(--shadow-sm)',
-                  }}>
+                  <button key={r.id}
+                    onClick={() => setEditingRep(r)}
+                    style={{
+                      background: 'var(--card-glass)', borderRadius: 16,
+                      padding: '12px 14px',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: 'var(--shadow-sm)',
+                      border: 'none', cursor: 'pointer', textAlign: 'left', width: '100%',
+                    }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: 11, flexShrink: 0,
                       background: `${cat.color}18`,
@@ -423,7 +428,7 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
                     <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--red)', flexShrink: 0 }}>
                       −{fmt(r.costo)}
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -479,6 +484,21 @@ function VehicleSheet({ vehiculo: vInit, onClose }: { vehiculo: Vehiculo; onClos
           </div>
         </div>
       </div>
+
+      {editingRep && (
+        <EditReparacionSheet
+          reparacion={editingRep}
+          onClose={() => setEditingRep(null)}
+          onSaved={(updated) => {
+            setReparaciones((prev) => prev.map((r) => r.id === updated.id ? updated : r))
+            setEditingRep(null)
+          }}
+          onDeleted={(id) => {
+            setReparaciones((prev) => prev.filter((r) => r.id !== id))
+            setEditingRep(null)
+          }}
+        />
+      )}
     </>
   )
 }
