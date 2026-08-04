@@ -34,6 +34,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     const { data } = await supabase.auth.getSession()
     set({ session: data.session, user: data.session?.user ?? null, loading: false })
 
+    // El user que viene del token puede estar desactualizado (el email queda
+    // congelado al momento del login). Reconciliamos contra el servidor.
+    if (data.session) {
+      const { data: fresco } = await supabase.auth.getUser()
+      if (fresco.user) set({ user: fresco.user })
+    }
+
     supabase.auth.onAuthStateChange((_event, session) => {
       set({ session, user: session?.user ?? null })
     })

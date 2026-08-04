@@ -3,6 +3,11 @@ import { create } from 'zustand'
 export type ThemeMode = 'auto' | 'light' | 'dark'
 type ResolvedTheme = 'light' | 'dark'
 
+// El modo oscuro sigue en desarrollo: hay controles que quedan ocultos y pantallas
+// sin buen contraste. Mientras esté en false la app se fuerza a claro, incluso con
+// el sistema en oscuro. Poner en true cuando el tema esté terminado.
+export const DARK_HABILITADO = false
+
 const LS_PREFIX = 'motorhub_theme:'
 const ANON_KEY = `${LS_PREFIX}anon`
 
@@ -23,7 +28,10 @@ function getSystemTheme(): ResolvedTheme {
 function readMode(userId: string | null): ThemeMode {
   const key = userId ? `${LS_PREFIX}${userId}` : ANON_KEY
   const raw = localStorage.getItem(key)
-  if (raw === 'light' || raw === 'dark' || raw === 'auto') return raw
+  // Si quedó 'dark' guardado de antes, se muestra como claro pero no se pisa el
+  // storage: al rehabilitar el tema vuelve la preferencia original del usuario.
+  if (raw === 'dark') return DARK_HABILITADO ? 'dark' : 'light'
+  if (raw === 'light' || raw === 'auto') return raw
   return 'auto'
 }
 
@@ -33,6 +41,7 @@ function writeMode(userId: string | null, mode: ThemeMode) {
 }
 
 function resolve(mode: ThemeMode): ResolvedTheme {
+  if (!DARK_HABILITADO) return 'light'
   return mode === 'auto' ? getSystemTheme() : mode
 }
 
@@ -58,7 +67,9 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
       const onChange = () => {
         const s = get()
         if (s.mode !== 'auto') return
-        const next: ResolvedTheme = mql.matches ? 'dark' : 'light'
+        // Pasa por resolve() para respetar DARK_HABILITADO, si no el cambio de
+        // tema del sistema metería el modo oscuro por la ventana.
+        const next = resolve(s.mode)
         apply(next)
         set({ resolved: next })
       }
@@ -68,6 +79,7 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   },
 
   setMode: (mode) => {
+    if (mode === 'dark' && !DARK_HABILITADO) return
     const { userId } = get()
     writeMode(userId, mode)
     const resolved = resolve(mode)
