@@ -86,7 +86,9 @@ CREATE TABLE gastos_generales (
 -- ============================================
 
 -- Vista: resumen financiero por vehículo
-CREATE OR REPLACE VIEW vista_vehiculos_financiero AS
+-- security_invoker: la vista respeta las RLS del usuario que consulta
+CREATE OR REPLACE VIEW vista_vehiculos_financiero
+WITH (security_invoker = true) AS
 SELECT
   v.id,
   v.marca,
@@ -130,24 +132,34 @@ ALTER TABLE gastos_generales ENABLE ROW LEVEL SECURITY;
 
 -- Políticas: cada usuario solo ve sus propios datos
 CREATE POLICY "vehiculos_own" ON vehiculos
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "reparaciones_own" ON reparaciones
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
 CREATE POLICY "gastos_own" ON gastos_generales
-  FOR ALL USING (auth.uid() = user_id);
+  FOR ALL TO authenticated
+  USING ((SELECT auth.uid()) = user_id)
+  WITH CHECK ((SELECT auth.uid()) = user_id);
 
 -- ============================================
 -- TRIGGER: updated_at automático
 -- ============================================
 CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+SET search_path = ''
+AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 CREATE TRIGGER vehiculos_updated_at
   BEFORE UPDATE ON vehiculos
@@ -168,5 +180,6 @@ CREATE INDEX idx_vehiculos_user ON vehiculos(user_id);
 CREATE INDEX idx_vehiculos_estado ON vehiculos(estado);
 CREATE INDEX idx_vehiculos_fecha_compra ON vehiculos(fecha_compra);
 CREATE INDEX idx_reparaciones_vehiculo ON reparaciones(vehiculo_id);
+CREATE INDEX idx_reparaciones_user ON reparaciones(user_id);
 CREATE INDEX idx_gastos_user ON gastos_generales(user_id);
 CREATE INDEX idx_gastos_fecha ON gastos_generales(fecha);
