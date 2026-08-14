@@ -1,0 +1,48 @@
+# Supabase pausa los proyectos del plan free tras 7 días sin actividad, y una vez
+# pausado NO se despierta solo: hay que restaurarlo a mano desde el dashboard.
+# Mientras tanto la autenticación deja de responder y el cliente no puede entrar.
+#
+# Este workflow hace una consulta diaria a la API para que el proyecto cuente como
+# activo. Es una lectura, no una escritura: no ensucia la base con datos de relleno.
+name: Mantener Supabase activo
+
+on:
+  schedule:
+    # Todos los días a las 09:00 UTC. Diario (y no semanal) para tener margen:
+    # si un día falla o GitHub atrasa el cron, quedan 6 días de colchón.
+    - cron: '0 9 * * *'
+  # Permite ejecutarlo a mano desde la pestaña Actions para probarlo.
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Consultar la API de Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL:-}" ] || [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+            echo "Faltan los secrets SUPABASE_URL o SUPABASE_ANON_KEY del repositorio."
+            exit 1
+          fi
+
+          # Se consulta una tabla real para que Postgres ejecute la query. Con RLS
+          # activa y sin sesión la respuesta es [], pero la actividad queda igual.
+          codigo=$(curl -sS -o respuesta.txt -w '%{http_code}' --max-time 30 \
+            "${SUPABASE_URL}/rest/v1/vehiculos?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "HTTP ${codigo}"
+          echo "Respuesta: $(cat respuesta.txt)"
+
+          if [ "${codigo}" != "200" ]; then
+            echo "::error::Supabase no respondió 200. Puede estar pausado o caído; revisá el dashboard."
+            exit 1
+          fi
+
+          echo "Proyecto activo."
